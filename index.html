@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fishin'</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="introOverlay" class="introOverlay" style="display:none">
+    <div class="introCard">
+      <div id="introText" class="introText"></div>
+      <div id="introChoices" class="introChoices"></div>
+    </div>
+  </div>
+  <details id="debugMenu">
+    <summary>DEBUG</summary>
+    <div class="debugSection"><button id="debugResetButton">RESET</button></div>
+    <div class="debugSection"><button id="debugAddBaitButton">ADD BAIT</button></div>
+    <div class="debugSection"><button id="debugAddMoneyButton">+ $100</button></div>
+    <div class="debugSection"><label><input type="checkbox" id="debugTravelToggle"> INSTANT TRAVEL</label></div>
+    <div class="debugSection"><label><input type="checkbox" id="debugFightMetersToggle"> FIGHT METERS</label></div>
+    <div class="debugSection"><label><input type="checkbox" id="debugFishStatsToggle"> SHOW FISH STATS</label></div>
+    <div class="debugSection"><label><input type="checkbox" id="debugSpecifyFishToggle"> SPECIFY FISH</label></div>
+    <div class="debugSection">
+      <div>CHANGE WEATHER</div>
+      <select id="debugWeatherSelect">
+        <option value="">Choose...</option>
+        <option value="Sunny">Sunny</option>
+        <option value="Rainy">Rainy</option>
+        <option value="Cloudy">Cloudy</option>
+      </select>
+    </div>
+    <div class="debugSection">
+      <div>SEASON</div>
+      <select id="debugSeasonSelect">
+        <option value="">Choose...</option>
+        <option value="Spring">Spring — Day 1</option>
+        <option value="Summer">Summer — Day 1</option>
+        <option value="Fall">Fall — Day 1</option>
+      </select>
+    </div>
+  </details>
+
+  <h1 id="locationTitle">Fishin': The Fishing Hole</h1>
+
+  <div id="topNav" class="topNav">
+    <div id="locationTabs" class="locationTabs"></div>
+    <div id="utilityTabs" class="utilityTabs">
+      <button id="marketButton" class="utilityTab">Market</button>
+      <button id="shopButton" class="utilityTab">Shop</button>
+      <button id="journalButton" class="utilityTab">Journal</button>
+    </div>
+  </div>
+
+  <div id="pierPanel">
+    <aside id="debugFishPanel" class="debugFishPanel" style="display:none" aria-label="Specify fish debug controls">
+      <div class="debugFishPanelTitle">SPECIFY FISH</div>
+      <div id="debugFishLocation" class="debugFishLocation"></div>
+      <div id="debugFishList" class="debugFishList"></div>
+      <div class="debugWeightSection">
+        <label for="debugWeightSlider">WEIGHT CLASS</label>
+        <input id="debugWeightSlider" type="range" min="0" max="5" step="1" value="2">
+        <div class="debugWeightEnds"><span>Small</span><span>Trophy</span></div>
+        <div id="debugWeightLabel" class="debugWeightLabel">Average</div>
+      </div>
+      <div id="debugForcedSummary" class="debugForcedSummary"></div>
+    </aside>
+    <div id="fishingHeader" class="fishingHeader">
+      <span id="seasonDisplay">Spring</span> • Day <span id="dayDisplay">1</span> • Year <span id="yearDisplay">1</span> • <span id="timeDisplay">Dawn</span>
+      <span class="headerMoney">$<span id="moneyDisplay">0.00</span></span>
+    </div>
+    <div id="status">
+      <div id="fishingMetaRow" class="fishingMetaRow">
+        <div id="locationDescription" class="locationDescription"></div>
+        <div id="currentGear" class="currentGear">
+          <div>Rod: <span id="rodDisplay">Old Rod</span></div>
+          <div>Reel: <span id="reelDisplay">Old Reel</span></div>
+          <div>Bait: <span id="baitTypeDisplay">Worm</span> (<span id="baitAmountDisplay">12</span>)</div>
+          <div>Special: <span id="specialItemDisplay">—</span></div>
+        </div>
+      </div>
+      <div id="environmentRow" class="environmentRow"><div id="sky"></div><div id="temperatureDisplay" class="temperatureDisplay"></div></div>
+      <div id="water"></div>
+
+      <div id="fishingArea">
+        <div id="lineStage"><div id="tensionGrid" aria-hidden="true"><div id="tensionFillLayer"></div></div><div id="line"></div></div>
+        <div id="readout">
+          <div id="message"></div>
+          <div id="fightPanel"></div>
+          <div id="hint"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="depthControls" class="depthControls"></div>
+    <div id="normalControls">
+      <button id="fishButton">Cast Line</button>
+      <button id="pullUpButton">Pull Up</button>
+      <button id="sleepButton">Sleep</button>
+      <button id="quitJobButton">Quit Job</button>
+    </div>
+
+    <div id="fightControls">
+      <div class="fightPrimaryActions">
+        <button id="fightReelButton">HOLD TO REEL</button>
+        <button id="fightPressureButton">HOLD PRESSURE</button>
+      </div>
+      <button id="cutLineButton">Cut Line</button>
+    </div>
+  </div>
+
+  <div id="marketPanel">
+    <div class="panelHeader">
+      <div class="locationInfo"><span id="marketCalendarDisplay"></span><br>Money: $<span id="marketMoneyDisplay">0.00</span></div>
+      <button id="marketReturnButton">Return to Fishing</button>
+    </div>
+    <div id="marketMessage">The fishmonger looks over your catch.</div>
+    <div id="marketInventory"></div>
+    <br>
+    <button id="sellAllButton">Sell All Fish</button>
+  </div>
+
+  <div id="shopPanel">
+    <div class="panelHeader">
+      <div class="locationInfo"><span id="shopCalendarDisplay"></span><br>Money: $<span id="shopMoneyDisplay">0.00</span></div>
+      <button id="shopReturnButton">Return to Fishing</button>
+    </div>
+    <div id="shopMessage">Hooks, bait, and things you probably don't need.</div>
+    <div id="shopInventory"></div>
+  </div>
+
+  <div id="journalPanel">
+    <div class="journalHeader">
+      <div>Your catches are recorded automatically. Books reveal additional details.</div>
+      <button id="journalReturnButton">Return to Fishing</button>
+    </div>
+    <div class="journalGrid">
+      <div id="journalSpecies" class="journalSpecies"></div>
+      <div id="journalEntry" class="journalEntry"></div>
+    </div>
+  </div>
+
+  <div class="inventoryGrid">
+    <div>
+      <h2>Creel — <span id="inventoryCount">0</span> / <span id="inventoryLimit">10</span></h2>
+      <div id="creel" class="inventoryBox"><div class="empty">Your creel is empty.</div></div>
+      <div id="stats">Total weight: <span id="totalWeight">0.00</span> lb<br>Estimated value: $<span id="totalValue">0.00</span></div>
+    </div>
+    <div>
+      <h2>Gear</h2>
+      <div id="gearInventory" class="inventoryBox"></div>
+    </div>
+  </div>
+
+  <h2>Log</h2>
+  <div id="gameLog"><div class="empty">Nothing yet.</div></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/fishing.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
