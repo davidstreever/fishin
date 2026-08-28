@@ -435,7 +435,7 @@ document.addEventListener("keydown",e=>{
   if((e.key==="k"||e.key==="K")&&state==="reeling"){keyboardActivate(cutLineButton);return;}
   if((e.key==="l"||e.key==="L")&&["waiting","nibble","bite"].includes(state)){keyboardActivate(pullUpButton);return;}
   if((e.key==="s"||e.key==="S")&&sleepButton.offsetParent!==null&&!sleepButton.disabled){keyboardActivate(sleepButton);return;}
-  if((e.key==="w"||e.key==="W")&&isWorkDue()){keyboardActivate(fishButton);return;}
+  if((e.key==="w"||e.key==="W")&&isWorkDue()&&["ready","finished"].includes(state)){keyboardActivate(fishButton);return;}
 });
 document.addEventListener("keyup",e=>{if(e.key==="ArrowUp")stopReeling();if(e.key==="ArrowDown")stopPressure();});
 

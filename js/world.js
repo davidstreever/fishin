@@ -101,7 +101,9 @@ function getWorkMessage(){
   return randomChoice(["Another boring day at work.","You've had better days at work. You've had worse ones, too. You get through it.","Not too busy at work today."]);
 }
 function goToWork(){
-  if(!isWorkDue()) return;
+  // Never allow Work to interrupt a cast that was legal when it began.
+  // The boundary remains pending until the encounter reaches ready/finished.
+  if(!isWorkDue() || !["ready","finished"].includes(state)) return;
   addLog("world","You head to work.");
   const workMessage=getWorkMessage();
   addLog("world",workMessage);

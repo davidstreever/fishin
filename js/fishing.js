@@ -19,13 +19,20 @@ function getEquippedReel(){ return reels[player.gear.reel]||reels.old_reel; }
 function getInventoryLimit(){ const v=vehicles[player.gear.vehicle]||vehicles.old_truck; return player.baseInventoryLimit+(v.creelBonus||0); }
 
 function handleMainButton(){
-  if(isWorkDue()){ goToWork(); return; }
-  if(isSleepChoice()){ if(canNightFish()) keepFishingAtNight(); return; }
+  // Once a cast has started, its fishing action always wins over a newly
+  // reached Work/Sleep boundary. The cast already paid for this time unit.
+  // Work/Sleep can only take over after the encounter has fully ended.
+  if((state==="waiting" || state==="nibble") && knowsTechnique("twitch")){ twitchLine(); return; }
+  if(state==="bite"){ hookFish(); return; }
+  if(state==="junk"){ landJunk(); return; }
+
+  if(state==="ready" || state==="finished"){
+    if(isWorkDue()){ goToWork(); return; }
+    if(isSleepChoice()){ if(canNightFish()) keepFishingAtNight(); return; }
+  }
+
   if(state==="finished"){ clearTimeout(resetTimer);resetFishing();if(!fishButton.disabled)castLine();return; }
   if(state==="ready") castLine();
-  else if((state==="waiting" || state==="nibble") && knowsTechnique("twitch")) twitchLine();
-  else if(state==="bite") hookFish();
-  else if(state==="junk") landJunk();
 }
 
 function handleSecondaryFishingButton(){
