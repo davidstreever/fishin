@@ -113,7 +113,7 @@ const junkItems = [
 ];
 
 const specialAbilities = {
-  false_rest:{id:"false_rest",name:"False Rest",triggerChance:0.20,followupSurgeMultiplier:1.35,restDuration:0.70}
+  false_rest:{id:"false_rest",name:"False Rest",triggerChance:0.20,followupSurgeMultiplier:1.65,restDuration:0.70}
 };
 function fishDef(id,name,waterType,minWeight,maxWeight,trophyWeight,valuePerPound,fightPower,depthPreferences,rarity,baitPreferences,weatherPreferences,seasonPreferences,timePreferences,nibbleBehavior,hookWindow=1800,specialAbilityIds=[]){
   return {id,name,waterType,minWeight,maxWeight,trophyWeight,valuePerPound,fightPower,depthPreferences,rarity,baitPreferences,weatherPreferences,seasonPreferences,timePreferences,nibbleBehavior,hookWindow,specialAbilities:specialAbilityIds};
@@ -123,6 +123,7 @@ const veryEager={biteChance:0.82,biteGrowth:0.18,leaveChance:0.01,twitchBonus:0.
 const eager={biteChance:0.72,biteGrowth:0.18,leaveChance:0.02,twitchBonus:0.10};
 const normalNibble={biteChance:0.55,biteGrowth:0.15,leaveChance:0.08,twitchBonus:0.18};
 const reluctant={biteChance:0.30,biteGrowth:0.11,leaveChance:0.24,twitchBonus:0.36};
+const brookTroutNibble={biteChance:0.16,biteGrowth:0.08,leaveChance:0.34,twitchBonus:0.52};
 const cautious={biteChance:0.38,biteGrowth:0.12,leaveChance:0.15,twitchBonus:0.28};
 const veryCautious={biteChance:0.28,biteGrowth:0.10,leaveChance:0.20,twitchBonus:0.32};
 
@@ -133,12 +134,12 @@ const offshoreTimes={Dawn:1.1,"Early Morning":1.0,"Mid Morning":1.0,"Late Mornin
 const fishTypes = [
   // Freshwater
   fishDef("pumpkinseed","Pumpkinseed","freshwater",0.15,1.25,1.05,2.20,0.55,{shallow:1.00,mid:0.20,deep:0.03},"common",{"Worm":1.8,"Minnow":0.5,"Insect":1.7,"Grub":1.4},["SUN","HOT"],["Spring","Summer"],dayTimes,veryEager,2200),
-  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,0.90,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950),
-  fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,1.35,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,normalNibble,1650,["false_rest"]),
-  fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,1.15,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,reluctant,1700),
-  fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,1.65,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,normalNibble,1600),
-  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,1.90,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,cautious,1600),
-  fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,1.05,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,eager,1850),
+  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.00,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950),
+  fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,1.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,normalNibble,1650,["false_rest"]),
+  fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,1.20,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,brookTroutNibble,1700),
+  fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,1.72,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,normalNibble,1600),
+  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,2.25,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,cautious,1600),
+  fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,1.10,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,eager,1850),
   fishDef("landlocked_salmon","Landlocked Salmon","freshwater",1.0,12.0,8.5,6.50,2.50,{shallow:0.10,mid:1.00,deep:0.65},"uncommon",{"Worm":0.7,"Minnow":1.9,"Insect":1.0,"Grub":0.8},["COLD","SHADE"],["Spring","Fall"],dayTimes,cautious,1500),
   fishDef("lake_trout","Lake Trout / Togue","freshwater",1.5,25.0,16.0,6.75,2.50,{shallow:0.02,mid:0.25,deep:1.00},"uncommon",{"Worm":0.6,"Minnow":1.9,"Insect":0.6,"Grub":0.7},["COLD"],["Spring","Fall"],offshoreTimes,cautious,1450),
   fishDef("cusk_fresh","Cusk","freshwater",0.75,15.0,9.0,4.50,1.65,{shallow:0.02,mid:0.20,deep:1.00},"uncommon",{"Worm":1.2,"Minnow":1.6,"Insect":0.7,"Grub":1.0},["COLD","SHADE"],["Spring","Fall"],nightTimes,normalNibble,1700),
@@ -161,12 +162,12 @@ const fishTypes = [
 
 const fishFightProfiles = {
   pumpkinseed:{staminaMultiplier:0.50,fightChance:0.15,continueChance:0.05},
-  yellow_perch:{staminaMultiplier:0.70,fightChance:0.25,continueChance:0.12},
-  chain_pickerel:{staminaMultiplier:0.85,fightChance:0.45,continueChance:0.32},
-  brook_trout:{staminaMultiplier:1.05,fightChance:0.25,continueChance:0.38},
-  smallmouth_bass:{staminaMultiplier:1.15,fightChance:0.45,continueChance:0.42},
-  largemouth_bass:{staminaMultiplier:1.20,fightChance:0.40,continueChance:0.38},
-  white_perch:{staminaMultiplier:0.75,fightChance:0.25,continueChance:0.15},
+  yellow_perch:{staminaMultiplier:0.72,fightChance:0.28,continueChance:0.14},
+  chain_pickerel:{staminaMultiplier:0.82,fightChance:0.42,continueChance:0.30},
+  brook_trout:{staminaMultiplier:1.10,fightChance:0.30,continueChance:0.40},
+  smallmouth_bass:{staminaMultiplier:1.18,fightChance:0.47,continueChance:0.43},
+  largemouth_bass:{staminaMultiplier:1.32,fightChance:0.46,continueChance:0.44},
+  white_perch:{staminaMultiplier:0.78,fightChance:0.27,continueChance:0.16},
   landlocked_salmon:{staminaMultiplier:1.55,fightChance:0.60,continueChance:0.55},
   lake_trout:{staminaMultiplier:1.65,fightChance:0.20,continueChance:0.22},
   cusk_fresh:{staminaMultiplier:1.30,fightChance:0.15,continueChance:0.18},
