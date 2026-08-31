@@ -8,14 +8,13 @@ const seasons = ["Spring", "Summer", "Fall"];
 
 const DEPTHS = ["shallow", "mid", "deep"];
 const DEPTH_LABELS = { shallow:"Shallow", mid:"Mid", deep:"Deep" };
-const TACKLE_KIT_COST = 25;
-const TARGET_DEPTH_ACCURACY = 0.95;
+const TARGET_DEPTH_ACCURACY = { surface_float:0.95, split_shot_kit:0.85, egg_sinker:0.95, adjustable_dual_diver:1.00 };
 
 const locations = {
   fishing_hole: {
     id:"fishing_hole", name:"The Fishing Hole", waterType:"freshwater",
     description:"Freshwater. Easy access. Too many anglers.",
-    availableDepths:["shallow","mid"], starterDepthOdds:{shallow:0.65,mid:0.35},
+    availableDepths:["shallow","mid"], starterDepthOdds:{shallow:0.80,mid:0.20},
     encounterRates:{fish:0.80,nothing:0.15,junk:0.05},
     requiresTruck:false, requiresBoat:false, storyLocked:false
   },
@@ -29,7 +28,7 @@ const locations = {
   big_lake: {
     id:"big_lake", name:"Big Lake", waterType:"freshwater",
     description:"Open water, deeper holes, and room for bigger fish.",
-    availableDepths:["shallow","mid","deep"], starterDepthOdds:{shallow:0.40,mid:0.40,deep:0.20},
+    availableDepths:["shallow","mid","deep"], starterDepthOdds:{shallow:0.65,mid:0.25,deep:0.10},
     encounterRates:{fish:0.89,nothing:0.10,junk:0.01},
     requiresTruck:true, requiresBoat:false, storyLocked:false
   },
@@ -43,7 +42,7 @@ const locations = {
   coastal_waters: {
     id:"coastal_waters", name:"Coastal Waters", waterType:"saltwater",
     description:"Open coastal water beyond the harbor.",
-    availableDepths:["shallow","mid","deep"], starterDepthOdds:{shallow:0.40,mid:0.35,deep:0.25},
+    availableDepths:["shallow","mid","deep"], starterDepthOdds:{shallow:0.60,mid:0.30,deep:0.10},
     encounterRates:{fish:0.85,nothing:0.12,junk:0.03},
     requiresTruck:true, requiresBoat:true, storyLocked:false
   },
@@ -85,9 +84,21 @@ const vehicles = {
 };
 
 const tackleItems = {
-  basic_tackle_kit:{
-    id:"basic_tackle_kit",name:"Basic Tackle Kit",cost:TACKLE_KIT_COST,
-    note:"Floats, sinkers, swivels, and hooks. Lets you choose fishing depth."
+  surface_float:{
+    id:"surface_float",name:"Surface Float",cost:8,targetDepth:"shallow",
+    note:"A simple float that keeps your bait in shallow water."
+  },
+  split_shot_kit:{
+    id:"split_shot_kit",name:"Split-Shot Kit",cost:15,targetDepth:"mid",
+    note:"These sinkers will let you fish in slightly deeper waters."
+  },
+  egg_sinker:{
+    id:"egg_sinker",name:"Egg Sinker",cost:25,targetDepth:"deep",
+    note:"These weights will let you fish the bottoms."
+  },
+  adjustable_dual_diver:{
+    id:"adjustable_dual_diver",name:"Adjustable Dual Diver",cost:75,targetDepth:"any",
+    note:"This advanced fishing tackle lets you quickly change the depth your line will sink to."
   }
 };
 
@@ -113,7 +124,7 @@ const junkItems = [
 ];
 
 const specialAbilities = {
-  false_rest:{id:"false_rest",name:"False Rest",triggerChance:0.20,followupSurgeMultiplier:1.65,restDuration:0.70}
+  false_rest:{id:"false_rest",name:"False Rest",triggerChance:0.40,followupSurgeMultiplier:1.65,restDuration:1.30,restTarget:-0.21}
 };
 function fishDef(id,name,waterType,minWeight,maxWeight,trophyWeight,valuePerPound,fightPower,depthPreferences,rarity,baitPreferences,weatherPreferences,seasonPreferences,timePreferences,nibbleBehavior,hookWindow=1800,specialAbilityIds=[]){
   return {id,name,waterType,minWeight,maxWeight,trophyWeight,valuePerPound,fightPower,depthPreferences,rarity,baitPreferences,weatherPreferences,seasonPreferences,timePreferences,nibbleBehavior,hookWindow,specialAbilities:specialAbilityIds};
@@ -134,11 +145,11 @@ const offshoreTimes={Dawn:1.1,"Early Morning":1.0,"Mid Morning":1.0,"Late Mornin
 const fishTypes = [
   // Freshwater
   fishDef("pumpkinseed","Pumpkinseed","freshwater",0.15,1.25,1.05,2.20,0.55,{shallow:1.00,mid:0.20,deep:0.03},"common",{"Worm":1.8,"Minnow":0.5,"Insect":1.7,"Grub":1.4},["SUN","HOT"],["Spring","Summer"],dayTimes,veryEager,2200),
-  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.00,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950),
-  fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,1.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,normalNibble,1650,["false_rest"]),
-  fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,1.20,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,brookTroutNibble,1700),
-  fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,1.72,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,normalNibble,1600),
-  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,2.25,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,cautious,1600),
+  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.75,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950),
+  fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,2.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,normalNibble,1650,["false_rest"]),
+  fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,2.30,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,brookTroutNibble,1700),
+  fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,2.50,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,normalNibble,1600),
+  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,2.80,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,cautious,1600),
   fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,1.10,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,eager,1850),
   fishDef("landlocked_salmon","Landlocked Salmon","freshwater",1.0,12.0,8.5,6.50,2.50,{shallow:0.10,mid:1.00,deep:0.65},"uncommon",{"Worm":0.7,"Minnow":1.9,"Insect":1.0,"Grub":0.8},["COLD","SHADE"],["Spring","Fall"],dayTimes,cautious,1500),
   fishDef("lake_trout","Lake Trout / Togue","freshwater",1.5,25.0,16.0,6.75,2.50,{shallow:0.02,mid:0.25,deep:1.00},"uncommon",{"Worm":0.6,"Minnow":1.9,"Insect":0.6,"Grub":0.7},["COLD"],["Spring","Fall"],offshoreTimes,cautious,1450),
@@ -161,33 +172,36 @@ const fishTypes = [
 ];
 
 const fishFightProfiles = {
-  pumpkinseed:{staminaMultiplier:0.50,fightChance:0.15,continueChance:0.05},
-  yellow_perch:{staminaMultiplier:0.72,fightChance:0.28,continueChance:0.14},
-  chain_pickerel:{staminaMultiplier:0.82,fightChance:0.42,continueChance:0.30},
-  brook_trout:{staminaMultiplier:1.10,fightChance:0.30,continueChance:0.40},
-  smallmouth_bass:{staminaMultiplier:1.18,fightChance:0.47,continueChance:0.43},
-  largemouth_bass:{staminaMultiplier:1.32,fightChance:0.46,continueChance:0.44},
-  white_perch:{staminaMultiplier:0.78,fightChance:0.27,continueChance:0.16},
-  landlocked_salmon:{staminaMultiplier:1.55,fightChance:0.60,continueChance:0.55},
-  lake_trout:{staminaMultiplier:1.65,fightChance:0.20,continueChance:0.22},
-  cusk_fresh:{staminaMultiplier:1.30,fightChance:0.15,continueChance:0.18},
-  arctic_charr:{staminaMultiplier:1.05,fightChance:0.25,continueChance:0.25},
-  atlantic_mackerel:{staminaMultiplier:0.85,fightChance:0.30,continueChance:0.26},
-  winter_flounder:{staminaMultiplier:0.75,fightChance:0.30,continueChance:0.10},
-  striped_bass:{staminaMultiplier:1.40,fightChance:0.30,continueChance:0.46},
-  bluefish:{staminaMultiplier:1.25,fightChance:0.30,continueChance:0.48},
-  pollock:{staminaMultiplier:1.10,fightChance:0.30,continueChance:0.30},
-  atlantic_herring:{staminaMultiplier:0.60,fightChance:0.30,continueChance:0.14},
-  haddock:{staminaMultiplier:1.10,fightChance:0.30,continueChance:0.28},
-  atlantic_cod:{staminaMultiplier:1.25,fightChance:0.30,continueChance:0.34},
-  atlantic_wolffish:{staminaMultiplier:1.35,fightChance:0.30,continueChance:0.38},
-  cusk_salt:{staminaMultiplier:1.18,fightChance:0.30,continueChance:0.26},
-  atlantic_halibut:{staminaMultiplier:1.60,fightChance:0.30,continueChance:0.42},
-  bluefin_tuna:{staminaMultiplier:2.00,fightChance:0.30,continueChance:0.60}
+  // initialSurgeChance controls the first run after the hook.
+  // surgeStaminaCost is the fraction of max stamina burned at the START of every surge.
+  // continueChance controls whether another surge is queued after the current one.
+  pumpkinseed:{staminaMultiplier:0.50,initialSurgeChance:0.30,surgeStaminaCost:0.70,continueChance:0.05},
+  yellow_perch:{staminaMultiplier:0.82,initialSurgeChance:0.95,surgeStaminaCost:0.55,continueChance:0.20},
+  chain_pickerel:{staminaMultiplier:0.82,initialSurgeChance:0.90,surgeStaminaCost:0.42,continueChance:0.30},
+  brook_trout:{staminaMultiplier:1.10,initialSurgeChance:0.90,surgeStaminaCost:0.34,continueChance:0.45},
+  smallmouth_bass:{staminaMultiplier:1.22,initialSurgeChance:0.95,surgeStaminaCost:0.30,continueChance:0.65},
+  largemouth_bass:{staminaMultiplier:1.32,initialSurgeChance:0.95,surgeStaminaCost:0.22,continueChance:0.70},
+  white_perch:{staminaMultiplier:0.78,initialSurgeChance:0.85,surgeStaminaCost:0.55,continueChance:0.15},
+  landlocked_salmon:{staminaMultiplier:1.55,initialSurgeChance:0.98,surgeStaminaCost:0.16,continueChance:0.78},
+  lake_trout:{staminaMultiplier:1.65,initialSurgeChance:0.90,surgeStaminaCost:0.20,continueChance:0.58},
+  cusk_fresh:{staminaMultiplier:1.30,initialSurgeChance:0.75,surgeStaminaCost:0.28,continueChance:0.35},
+  arctic_charr:{staminaMultiplier:1.05,initialSurgeChance:0.92,surgeStaminaCost:0.28,continueChance:0.55},
+  atlantic_mackerel:{staminaMultiplier:0.85,initialSurgeChance:0.90,surgeStaminaCost:0.38,continueChance:0.40},
+  winter_flounder:{staminaMultiplier:0.75,initialSurgeChance:0.55,surgeStaminaCost:0.60,continueChance:0.08},
+  striped_bass:{staminaMultiplier:1.40,initialSurgeChance:0.97,surgeStaminaCost:0.18,continueChance:0.72},
+  bluefish:{staminaMultiplier:1.25,initialSurgeChance:0.98,surgeStaminaCost:0.17,continueChance:0.78},
+  pollock:{staminaMultiplier:1.10,initialSurgeChance:0.90,surgeStaminaCost:0.25,continueChance:0.52},
+  atlantic_herring:{staminaMultiplier:0.60,initialSurgeChance:0.80,surgeStaminaCost:0.55,continueChance:0.12},
+  haddock:{staminaMultiplier:1.10,initialSurgeChance:0.85,surgeStaminaCost:0.28,continueChance:0.42},
+  atlantic_cod:{staminaMultiplier:1.25,initialSurgeChance:0.90,surgeStaminaCost:0.23,continueChance:0.55},
+  atlantic_wolffish:{staminaMultiplier:1.35,initialSurgeChance:0.92,surgeStaminaCost:0.20,continueChance:0.62},
+  cusk_salt:{staminaMultiplier:1.18,initialSurgeChance:0.82,surgeStaminaCost:0.27,continueChance:0.42},
+  atlantic_halibut:{staminaMultiplier:1.60,initialSurgeChance:0.95,surgeStaminaCost:0.16,continueChance:0.68},
+  bluefin_tuna:{staminaMultiplier:2.00,initialSurgeChance:0.99,surgeStaminaCost:0.10,continueChance:0.88}
 };
 
 for(const fish of fishTypes){
-  fish.fightProfile=fishFightProfiles[fish.id] || {staminaMultiplier:1,fightChance:0.30,continueChance:0.25};
+  fish.fightProfile=fishFightProfiles[fish.id] || {staminaMultiplier:1,initialSurgeChance:0.85,surgeStaminaCost:0.30,continueChance:0.40};
 }
 
 const weatherDefinitions = {

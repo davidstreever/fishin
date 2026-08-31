@@ -23,7 +23,7 @@ function loadMetaProgress(){
 }
 
 function saveGame(){
-  const saveData={version:8,world,player,gameLogEntries,logIdCounter,catchIdCounter};
+  const saveData={version:10,world,player,gameLogEntries,logIdCounter,catchIdCounter};
   localStorage.setItem(SAVE_KEY,JSON.stringify(saveData));
   saveMetaProgress();
 }
@@ -68,8 +68,17 @@ function loadGame(){
     if(typeof world.introSeen!=="boolean") world.introSeen=true;
     if(typeof player.baseInventoryLimit!=="number") player.baseInventoryLimit=player.inventoryLimit||10;
     if(typeof player.gear.tackleKit!=="boolean") player.gear.tackleKit=false;
+    if(!Array.isArray(player.gear.ownedTackle)) player.gear.ownedTackle=[];
+    // Preserve the capabilities of saves that bought the old one-time Basic Tackle Kit.
+    if(player.gear.tackleKit){
+      for(const id of ["surface_float","split_shot_kit","egg_sinker"]){ if(!player.gear.ownedTackle.includes(id))player.gear.ownedTackle.push(id); }
+      player.gear.tackleKit=false;
+    }
     if(typeof player.gear.boatReady!=="boolean") player.gear.boatReady=false;
-    if(!player.selectedDepth || !DEPTHS.includes(player.selectedDepth)) player.selectedDepth="shallow";
+    if(typeof player.gear.truckCreels!=="number") player.gear.truckCreels=0;
+    player.gear.truckCreels=Math.max(0,Math.min(4,Math.floor(player.gear.truckCreels)));
+    if(!player.selectedDepth || (player.selectedDepth!=="random"&&!DEPTHS.includes(player.selectedDepth))) player.selectedDepth="random";
+    if(player.selectedDepth!=="random"&&!canTargetDepth(player.selectedDepth))player.selectedDepth="random";
     gameLogEntries.length=0;
     if(Array.isArray(s.gameLogEntries)) gameLogEntries.push(...s.gameLogEntries);
     logIdCounter=s.logIdCounter??0;

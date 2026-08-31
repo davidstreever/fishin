@@ -6,13 +6,13 @@ const seasonDisplay=document.getElementById("seasonDisplay"),dayDisplay=document
 const introOverlay=document.getElementById("introOverlay"),introText=document.getElementById("introText"),introChoices=document.getElementById("introChoices");
 const marketCalendarDisplay=document.getElementById("marketCalendarDisplay"),shopCalendarDisplay=document.getElementById("shopCalendarDisplay");
 const moneyDisplay=document.getElementById("moneyDisplay"),marketMoneyDisplay=document.getElementById("marketMoneyDisplay"),shopMoneyDisplay=document.getElementById("shopMoneyDisplay");
-const rodDisplay=document.getElementById("rodDisplay"),reelDisplay=document.getElementById("reelDisplay"),baitTypeDisplay=document.getElementById("baitTypeDisplay"),baitAmountDisplay=document.getElementById("baitAmountDisplay"),specialItemDisplay=document.getElementById("specialItemDisplay"),temperatureDisplay=document.getElementById("temperatureDisplay");
+const rodGearSelect=document.getElementById("rodGearSelect"),reelGearSelect=document.getElementById("reelGearSelect"),tackleGearSelect=document.getElementById("tackleGearSelect"),baitGearSelect=document.getElementById("baitGearSelect"),baitAmountDisplay=document.getElementById("baitAmountDisplay"),specialGearRow=document.getElementById("specialGearRow"),specialGearSelect=document.getElementById("specialGearSelect"),temperatureDisplay=document.getElementById("temperatureDisplay");
 const sky=document.getElementById("sky"),water=document.getElementById("water"),lineStage=document.getElementById("lineStage"),tensionGrid=document.getElementById("tensionGrid"),tensionFillLayer=document.getElementById("tensionFillLayer"),line=document.getElementById("line"),message=document.getElementById("message"),hint=document.getElementById("hint");
 const fightPanel=document.getElementById("fightPanel");
 const normalControls=document.getElementById("normalControls"),fightControls=document.getElementById("fightControls"),fishButton=document.getElementById("fishButton"),pullUpButton=document.getElementById("pullUpButton"),sleepButton=document.getElementById("sleepButton"),quitJobButton=document.getElementById("quitJobButton"),journalButton=document.getElementById("journalButton"),journalReturnButton=document.getElementById("journalReturnButton"),fightReelButton=document.getElementById("fightReelButton"),fightPressureButton=document.getElementById("fightPressureButton"),cutLineButton=document.getElementById("cutLineButton");
 const marketButton=document.getElementById("marketButton"),shopButton=document.getElementById("shopButton"),marketReturnButton=document.getElementById("marketReturnButton"),shopReturnButton=document.getElementById("shopReturnButton");
 const marketMessage=document.getElementById("marketMessage"),shopMessage=document.getElementById("shopMessage"),marketInventory=document.getElementById("marketInventory"),sellAllButton=document.getElementById("sellAllButton"),shopInventory=document.getElementById("shopInventory");
-const gearInventory=document.getElementById("gearInventory"),creel=document.getElementById("creel"),gameLog=document.getElementById("gameLog"),journalSpecies=document.getElementById("journalSpecies"),journalEntry=document.getElementById("journalEntry"),inventoryCountDisplay=document.getElementById("inventoryCount"),inventoryLimitDisplay=document.getElementById("inventoryLimit"),totalWeightDisplay=document.getElementById("totalWeight"),totalValueDisplay=document.getElementById("totalValue");
+const gearInventory=document.getElementById("gearInventory"),creel=document.getElementById("creel"),gameLog=document.getElementById("gameLog"),journalSpecies=document.getElementById("journalSpecies"),journalEntry=document.getElementById("journalEntry"),journalWaterTabs=document.getElementById("journalWaterTabs"),inventoryCountDisplay=document.getElementById("inventoryCount"),inventoryLimitDisplay=document.getElementById("inventoryLimit"),totalWeightDisplay=document.getElementById("totalWeight"),totalValueDisplay=document.getElementById("totalValue");
 const debugResetButton=document.getElementById("debugResetButton"),debugAddBaitButton=document.getElementById("debugAddBaitButton"),debugAddMoneyButton=document.getElementById("debugAddMoneyButton"),debugTravelToggle=document.getElementById("debugTravelToggle"),debugFightMetersToggle=document.getElementById("debugFightMetersToggle"),debugFishStatsToggle=document.getElementById("debugFishStatsToggle"),debugSpecifyFishToggle=document.getElementById("debugSpecifyFishToggle"),debugWeatherSelect=document.getElementById("debugWeatherSelect"),debugSeasonSelect=document.getElementById("debugSeasonSelect");
 const debugFishPanel=document.getElementById("debugFishPanel"),debugFishLocation=document.getElementById("debugFishLocation"),debugFishList=document.getElementById("debugFishList"),debugWeightSlider=document.getElementById("debugWeightSlider"),debugWeightLabel=document.getElementById("debugWeightLabel"),debugForcedSummary=document.getElementById("debugForcedSummary");
 
@@ -51,7 +51,7 @@ function renderGameLog(){ gameLog.innerHTML=""; for(const entry of [...gameLogEn
 function updateDisplays(){
   seasonDisplay.textContent=world.season; dayDisplay.textContent=world.seasonDay; yearDisplay.textContent=world.year||1; timeDisplay.textContent=getTimeLabel(); marketCalendarDisplay.textContent=getCalendarLabel(); shopCalendarDisplay.textContent=getCalendarLabel();
   moneyDisplay.textContent=player.money.toFixed(2); marketMoneyDisplay.textContent=player.money.toFixed(2); shopMoneyDisplay.textContent=player.money.toFixed(2);
-  rodDisplay.textContent=getEquippedRod().name; reelDisplay.textContent=getEquippedReel().name; baitTypeDisplay.textContent=player.selectedBait; baitAmountDisplay.textContent=player.gear.bait[player.selectedBait]; specialItemDisplay.textContent=player.gear.specialItem||"—"; if(temperatureDisplay){const w=world.weather||{};temperatureDisplay.textContent=(w.temperatureF??"—")+"°\n"+(w.temperature||"MILD");}
+  renderActiveGearControls(); if(temperatureDisplay){const w=world.weather||{};temperatureDisplay.textContent=(w.temperatureF??"—")+"° "+String(w.temperature||"MILD").toLowerCase().replace(/^./,c=>c.toUpperCase());}
   inventoryLimitDisplay.textContent=getInventoryLimit();
   updateDepthDisplay();
 }
@@ -117,7 +117,7 @@ function updateTimeControls(){
   }
   else if(state==="waiting" || state==="nibble"){
     if(knowsTechnique("twitch")){fishButton.disabled=false;fishButton.textContent="Twitch [J]";}
-    else {fishButton.disabled=true;fishButton.textContent="Line Out";}
+    else {fishButton.disabled=true;fishButton.textContent="Line Out";fishButton.classList.add("lineOutStatus");}
   }
   else if(state==="bite"){
     fishButton.disabled=false;
@@ -135,16 +135,26 @@ function refreshLocationUI(){
 function updateDepthDisplay(){
   if(!depthControls)return;const loc=locations[world.location];if(!loc){depthControls.innerHTML="";return;}
   depthControls.innerHTML='<span class="depthLabel">Depth:</span> ';
-  DEPTHS.forEach((depth,i)=>{
-    const available=loc.availableDepths.includes(depth);const b=document.createElement("button");b.className="depthText"+(depth===player.selectedDepth&&player.gear.tackleKit?" active":"");b.textContent=DEPTH_LABELS[depth];
-    b.disabled=!player.gear.tackleKit||!available||(state!=="ready"&&state!=="finished");
-    b.title=!player.gear.tackleKit?"Basic Tackle Kit lets you choose depth.":(!available?"This depth is not available here.":"");b.addEventListener("click",()=>selectDepth(depth));depthControls.appendChild(b);
-    if(i<DEPTHS.length-1)depthControls.appendChild(document.createTextNode(" | "));
+  const choices=["random",...DEPTHS];
+  choices.forEach((depth,i)=>{
+    const isRandom=depth==="random";
+    const available=isRandom||loc.availableDepths.includes(depth);
+    const unlocked=isRandom||canTargetDepth(depth);
+    const b=document.createElement("button");b.className="depthText"+(depth===player.selectedDepth?" active":"");b.textContent=isRandom?"Random":DEPTH_LABELS[depth];
+    b.disabled=!available||!unlocked||(state!=="ready"&&state!=="finished");
+    if(!available)b.title="This depth is not available here.";
+    else if(!unlocked)b.title=depth==="shallow"?"Buy a Surface Float to target shallow water.":depth==="mid"?"Buy a Split-Shot Kit to target mid water.":"Buy an Egg Sinker to target deep water.";
+    else if(isRandom)b.title="Use your old tackle and let the cast find its own depth.";
+    b.addEventListener("click",()=>selectDepth(depth));depthControls.appendChild(b);
+    if(i<choices.length-1)depthControls.appendChild(document.createTextNode(" | "));
   });
 }
 function selectDepth(depth){
-  const loc=locations[world.location];if(!player.gear.tackleKit||!loc.availableDepths.includes(depth))return;player.selectedDepth=depth;updateDepthDisplay();saveGame();
+  const loc=locations[world.location];
+  if(depth!=="random" && (!loc.availableDepths.includes(depth)||!canTargetDepth(depth)))return;
+  player.selectedDepth=depth;updateDepthDisplay();renderGearInventory();saveGame();
 }
+
 function renderLocationTabs(){
   locationTabs.innerHTML="";
   for(const loc of Object.values(locations)){
@@ -166,6 +176,28 @@ function renderLocationTabs(){
   }
 }
 
+function fillGearSelect(select,items,current,onChange){
+  if(!select)return; select.innerHTML="";
+  for(const item of items){const o=document.createElement("option");o.value=item.id;o.textContent=item.name;o.selected=item.id===current;select.appendChild(o);}
+  select.onchange=()=>onChange(select.value);
+}
+function activeTackleId(){return player.selectedDepth==="random"?"bobber":tackleForDepth(player.selectedDepth);}
+function renderActiveGearControls(){
+  fillGearSelect(rodGearSelect,player.gear.ownedRods.map(id=>rods[id]).filter(Boolean),player.gear.rod,id=>equipGear("rod",id));
+  fillGearSelect(reelGearSelect,player.gear.ownedReels.map(id=>reels[id]).filter(Boolean),player.gear.reel,id=>equipGear("reel",id));
+  const tackleOptions=[{id:"bobber",name:"Bobber"},...player.gear.ownedTackle.map(id=>tackleItems[id]).filter(Boolean)];
+  fillGearSelect(tackleGearSelect,tackleOptions,activeTackleId(),id=>selectTackle(id));
+  const baitOptions=Object.keys(player.gear.bait).filter(name=>player.gear.bait[name]>0).map(name=>({id:name,name}));
+  fillGearSelect(baitGearSelect,baitOptions,player.selectedBait,id=>selectBait(id));
+  if(baitAmountDisplay)baitAmountDisplay.textContent="×"+(player.gear.bait[player.selectedBait]||0);
+  const specials=Array.isArray(player.gear.ownedSpecialItems)?player.gear.ownedSpecialItems:[];
+  if(specialGearRow)specialGearRow.style.display=specials.length?"grid":"none";
+}
+function selectTackle(id){
+  if(id==="bobber"){player.selectedDepth="random";}
+  else {const item=tackleItems[id];if(!item||!hasTackle(id))return;player.selectedDepth=item.id==="adjustable_dual_diver"?(locations[world.location]?.availableDepths?.[0]||"shallow"):item.targetDepth;}
+  updateDisplays();renderGearInventory();updateTimeControls();saveGame();
+}
 function renderGearInventory(){
   gearInventory.innerHTML="";
   const vehicle=vehicles[player.gear.vehicle]||vehicles.old_truck;
@@ -175,35 +207,47 @@ function renderGearInventory(){
   const vehicleAction=document.createElement("span");
   if(!player.gear.vehicleRepaired){const repair=document.createElement("button");repair.className="smallButton";repair.textContent="Repair $"+vehicle.repairCost;repair.disabled=player.money<vehicle.repairCost;repair.addEventListener("click",repairTruck);vehicleAction.appendChild(repair);}
   vehicleRow.append(vehicleLabel,vehicleValue,vehicleAction);gearInventory.appendChild(vehicleRow);
-
-  const gearRows=[["Rod",getEquippedRod().name],["Reel",getEquippedReel().name],["Tackle",player.gear.tackleKit?"Basic Tackle Kit":"Dad's Old Tackle"]];
-  for(const [label,val] of gearRows){const row=document.createElement("div");row.className="inventoryEntry equippedGear";row.innerHTML="<span>"+label+"</span><span>"+val+"</span><span></span>";gearInventory.appendChild(row);}
+  const summary=document.createElement("div");summary.className="gearPickerSummary";
+  const addPicker=(label,items,current,change,suffix="")=>{const row=document.createElement("div"),lab=document.createElement("span"),sel=document.createElement("select");lab.textContent=label;for(const item of items){const o=document.createElement("option");o.value=item.id;o.textContent=item.name+(item.id===current?suffix:"");o.selected=item.id===current;sel.appendChild(o);}sel.addEventListener("change",()=>change(sel.value));row.append(lab,sel);summary.appendChild(row);};
+  addPicker("Rod",player.gear.ownedRods.map(id=>rods[id]).filter(Boolean),player.gear.rod,id=>equipGear("rod",id));
+  addPicker("Reel",player.gear.ownedReels.map(id=>reels[id]).filter(Boolean),player.gear.reel,id=>equipGear("reel",id));
+  addPicker("Tackle",[{id:"bobber",name:"Bobber"},...player.gear.ownedTackle.map(id=>tackleItems[id]).filter(Boolean)],activeTackleId(),id=>selectTackle(id));
+  addPicker("Bait",Object.keys(player.gear.bait).filter(name=>player.gear.bait[name]>0).map(name=>({id:name,name:name+" ×"+player.gear.bait[name]})),player.selectedBait,id=>selectBait(id));
+  gearInventory.appendChild(summary);
   if(player.gear.lockedBox){const boxRow=document.createElement("div");boxRow.className="inventoryEntry";boxRow.innerHTML="<span>Locked Box</span><span class='repairNote'>The lock won't budge.</span><span></span>";gearInventory.appendChild(boxRow);}
-  for(const baitName of Object.keys(player.gear.bait)){
-    const row=document.createElement("div");row.className="inventoryEntry"+(baitName===player.selectedBait?" selectedBait":"");const n=document.createElement("span");n.textContent=baitName;const a=document.createElement("span");a.textContent="×"+player.gear.bait[baitName];const b=document.createElement("button");b.className="smallButton";b.textContent=baitName===player.selectedBait?"Selected":"Select";b.disabled=baitName===player.selectedBait||player.gear.bait[baitName]<=0;b.addEventListener("click",()=>selectBait(baitName));row.append(n,a,b);gearInventory.appendChild(row);
-  }
 }
 function repairTruck(){
   const vehicle=vehicles[player.gear.vehicle]||vehicles.old_truck;if(player.gear.vehicleRepaired||player.money<vehicle.repairCost)return;player.money-=vehicle.repairCost;player.gear.vehicleRepaired=true;gainObsession(1,"repairing the truck for fishing");addLog("buy","Repaired the Old Truck for $"+vehicle.repairCost.toFixed(2)+".");message.textContent="The Old Truck coughs, rattles, and finally starts.";updateDisplays();renderGearInventory();renderLocationTabs();renderShopInventory();saveGame();
 }
-
 function selectBait(name){ if(player.gear.bait[name]<=0)return;player.selectedBait=name;updateDisplays();renderGearInventory();updateTimeControls();saveGame(); }
 
 function renderShopInventory(){
   shopInventory.innerHTML="";const box=document.createElement("div");box.className="shopBox";
   const baitTitle=document.createElement("div");baitTitle.className="shopSectionTitle";baitTitle.textContent="BAIT";box.appendChild(baitTitle);
-  [["Worm",5,2],["Minnow",5,6],["Insect",5,4],["Grub",5,4],["Shrimp",5,6],["Squid",5,6],["Crab",5,8],["Cut Bait",5,8]].forEach(([name,amount,cost])=>{const row=document.createElement("div");row.className="shopRow";row.innerHTML="<span>"+(name==="Cut Bait"?name:name+"s")+" ×"+amount+" <span class=\"shopHave\">(Have: "+player.gear.bait[name]+")</span></span><span>$"+cost.toFixed(2)+"</span>";const b=document.createElement("button");b.className="smallButton";b.textContent="Buy";b.addEventListener("click",()=>buyBait(name,amount,cost));row.appendChild(b);box.appendChild(row);});
-  const tackleTitle=document.createElement("div");tackleTitle.className="shopSectionTitle";tackleTitle.textContent="TACKLE";box.appendChild(tackleTitle);box.appendChild(makeTackleShopRow(tackleItems.basic_tackle_kit));
+  const baitPrices={Worm:2,Minnow:6,Insect:4,Grub:4,Shrimp:6,Squid:6,Crab:8,"Cut Bait":8};
+  Object.entries(baitPrices).forEach(([name,baseCost])=>{
+    const row=document.createElement("div");row.className="shopRow baitShopRow";
+    const label=document.createElement("span");label.innerHTML=(name==="Cut Bait"?name:name+"s")+' <span class="shopHave">(Have: '+player.gear.bait[name]+')</span>';
+    const choices=document.createElement("span");choices.className="baitQuantityChoices";
+    const price=document.createElement("span");price.className="baitShopPrice";
+    const buy=document.createElement("button");buy.className="smallButton";buy.textContent="Buy";
+    let selectedAmount=5;
+    const refresh=()=>{const cost=baseCost*(selectedAmount/5);price.textContent="$"+cost.toFixed(2);buy.disabled=player.money<cost;choices.querySelectorAll("button").forEach(b=>b.classList.toggle("active",Number(b.dataset.amount)===selectedAmount));};
+    [5,10,20].forEach((amount,i)=>{if(i)choices.appendChild(document.createTextNode(" | "));const b=document.createElement("button");b.className="baitQuantityChoice";b.dataset.amount=amount;b.textContent="×"+amount;b.addEventListener("click",()=>{selectedAmount=amount;refresh();});choices.appendChild(b);});
+    buy.addEventListener("click",()=>buyBait(name,selectedAmount,baseCost*(selectedAmount/5)));refresh();row.append(label,choices,price,buy);box.appendChild(row);
+  });
+  const tackleTitle=document.createElement("div");tackleTitle.className="shopSectionTitle";tackleTitle.textContent="TACKLE";box.appendChild(tackleTitle);Object.values(tackleItems).forEach(item=>box.appendChild(makeTackleShopRow(item)));
   const rodTitle=document.createElement("div");rodTitle.className="shopSectionTitle";rodTitle.textContent="RODS";box.appendChild(rodTitle);Object.values(rods).forEach(r=>box.appendChild(makeGearShopRow("rod",r)));
   const reelTitle=document.createElement("div");reelTitle.className="shopSectionTitle";reelTitle.textContent="REELS";box.appendChild(reelTitle);Object.values(reels).forEach(r=>box.appendChild(makeGearShopRow("reel",r)));
+  if(player.gear.vehicleRepaired){const storageTitle=document.createElement("div");storageTitle.className="shopSectionTitle";storageTitle.textContent="CREELS";box.appendChild(storageTitle);const count=player.gear.truckCreels||0;const costs=[15,25,40,60];const row=document.createElement("div");row.className="shopRow";const label=document.createElement("span");label.innerHTML="Truck Creel <span class=\"shopHave\">(Have: "+count+" / 4)</span><div class=\"shopNote\">Adds room for 10 more fish in the truck.</div>";const price=document.createElement("span");price.textContent=count<4?"$"+costs[count].toFixed(2):"";const b=document.createElement("button");b.className="smallButton";b.textContent=count<4?"Buy":"Full";b.disabled=count>=4||player.money<costs[count];b.addEventListener("click",buyTruckCreel);row.append(label,price,b);box.appendChild(row);}
   const bookTitle=document.createElement("div");bookTitle.className="shopSectionTitle";bookTitle.textContent="BOOKS";box.appendChild(bookTitle);Object.values(books).forEach(book=>box.appendChild(makeBookShopRow(book)));
   shopInventory.appendChild(box);
 }
 function makeTackleShopRow(item){
   const row=document.createElement("div");row.className="shopRow";const label=document.createElement("span");label.innerHTML=item.name+'<div class="shopNote">'+item.note+"</div>";const price=document.createElement("span");price.textContent="$"+item.cost.toFixed(2);const b=document.createElement("button");b.className="smallButton";
-  if(player.gear.tackleKit){b.textContent="Owned";b.disabled=true;}else{b.textContent="Buy";b.disabled=player.money<item.cost;b.addEventListener("click",buyTackleKit);}row.append(label,price,b);return row;
+  const owned=hasTackle(item.id);if(owned){b.textContent="Owned";b.disabled=true;}else{b.textContent="Buy";b.disabled=player.money<item.cost;b.addEventListener("click",()=>buyTackle(item.id));}row.append(label,price,b);return row;
 }
-function buyTackleKit(){const item=tackleItems.basic_tackle_kit;if(player.gear.tackleKit||player.money<item.cost)return;player.money-=item.cost;player.gear.tackleKit=true;const loc=locations[world.location];if(!loc.availableDepths.includes(player.selectedDepth))player.selectedDepth=loc.availableDepths[0];addLog("buy","Bought "+item.name+" for $"+item.cost.toFixed(2)+".");updateDisplays();renderGearInventory();renderShopInventory();updateDepthDisplay();saveGame();}
+function buyTackle(id){const item=tackleItems[id];if(!item||hasTackle(id)||player.money<item.cost)return;player.money-=item.cost;player.gear.ownedTackle.push(id);addLog("buy","Bought "+item.name+" for $"+item.cost.toFixed(2)+".");updateDisplays();renderGearInventory();renderShopInventory();updateDepthDisplay();saveGame();}
 function makeGearShopRow(type,item){
   const row=document.createElement("div");row.className="shopRow";const label=document.createElement("span");label.innerHTML=item.name+'<div class="shopNote">'+item.note+"</div>";const price=document.createElement("span");price.textContent="$"+item.cost.toFixed(2);const b=document.createElement("button");b.className="smallButton";
   const owned=type==="rod"?player.gear.ownedRods.includes(item.id):player.gear.ownedReels.includes(item.id);const equipped=player.gear[type]===item.id;if(equipped){b.textContent="Equipped";b.disabled=true;}else if(owned){b.textContent="Equip";b.addEventListener("click",()=>equipGear(type,item.id));}else{b.textContent="Buy";b.disabled=player.money<item.cost;b.addEventListener("click",()=>buyGear(type,item.id));}row.append(label,price,b);return row;
@@ -211,6 +255,7 @@ function makeGearShopRow(type,item){
 function buyGear(type,id){const item=type==="rod"?rods[id]:reels[id];if(!item||player.money<item.cost)return;player.money-=item.cost;(type==="rod"?player.gear.ownedRods:player.gear.ownedReels).push(id);player.gear[type]=id;addLog("buy","Bought "+item.name+" for $"+item.cost.toFixed(2)+".");updateDisplays();renderGearInventory();renderShopInventory();saveGame();}
 function equipGear(type,id){const list=type==="rod"?player.gear.ownedRods:player.gear.ownedReels;if(!list.includes(id))return;player.gear[type]=id;updateDisplays();renderGearInventory();renderShopInventory();saveGame();}
 
+function buyTruckCreel(){const count=player.gear.truckCreels||0,costs=[15,25,40,60];if(!player.gear.vehicleRepaired||count>=4||player.money<costs[count])return;const cost=costs[count];player.money-=cost;player.gear.truckCreels=count+1;addLog("buy","Bought a truck creel for $"+cost.toFixed(2)+".");shopMessage.textContent="You strap another creel into the truck.";updateDisplays();updateInventoryDisplay();renderGearInventory();renderShopInventory();saveGame();}
 function makeBookShopRow(book){
   const row=document.createElement("div");row.className="shopRow";const label=document.createElement("span");label.innerHTML=book.name+'<div class="shopNote">'+book.note+"</div>";const price=document.createElement("span");price.textContent="$"+book.cost.toFixed(2);const b=document.createElement("button");b.className="smallButton";
   if(player.books.includes(book.id)){b.textContent="Read";b.disabled=true;}else{b.textContent="Buy";b.disabled=player.money<book.cost;b.addEventListener("click",()=>buyBook(book.id));}
@@ -219,11 +264,18 @@ function makeBookShopRow(book){
 function hasBook(id){return player.books.includes(id);}
 function knowsTechnique(id){return (player.meta.learnedTechniques||[]).includes(id);}
 function learnTechnique(id){if(!player.meta.learnedTechniques)player.meta.learnedTechniques=[];if(!player.meta.learnedTechniques.includes(id))player.meta.learnedTechniques.push(id);}
-function buyBook(id){const book=books[id];if(!book||player.books.includes(id)||player.money<book.cost)return;player.money-=book.cost;player.books.push(id);if(id==="playing_the_fish")learnTechnique("hold_pressure");if(id==="advanced_freshwater"||id==="advanced_saltwater")learnTechnique("twitch");gainObsession(0.5,"buying fishing books");addLog("buy","Bought "+book.name+" for $"+book.cost.toFixed(2)+".");shopMessage.textContent="You add "+book.name+" to your shelf.";updateDisplays();renderShopInventory();renderLocationTabs();saveGame();}
-function fishIsKnown(fish){return player.catchHistory.some(c=>c.speciesId===fish.id)||hasBook("visual_guide_maine_fish");}
-function hasPracticalGuide(fish){return hasBook(fish.waterType==="freshwater"?"freshwater_practical":"saltwater_practical");}
-function hasFindingGuide(fish){return hasBook(fish.waterType==="freshwater"?"finding_freshwater":"finding_saltwater");}
-function hasAdvancedGuide(fish){return hasBook(fish.waterType==="freshwater"?"advanced_freshwater":"advanced_saltwater");}
+function applyBookKnowledge(id){
+  if(id==="visual_guide_maine_fish") learnAllFishKnowledge(["name","waterType"]);
+  if(id==="freshwater_practical") learnFishKnowledgeForWaterType("freshwater",["weight","trophyWeight","rarity","bait","seasons"]);
+  if(id==="saltwater_practical") learnFishKnowledgeForWaterType("saltwater",["weight","trophyWeight","rarity","bait","seasons"]);
+  if(id==="finding_freshwater") learnFishKnowledgeForWaterType("freshwater",["locations","depth","weather","time"]);
+  if(id==="finding_saltwater") learnFishKnowledgeForWaterType("saltwater",["locations","depth","weather","time"]);
+  if(id==="advanced_freshwater") learnFishKnowledgeForWaterType("freshwater",["behavior"]);
+  if(id==="advanced_saltwater") learnFishKnowledgeForWaterType("saltwater",["behavior"]);
+}
+function buyBook(id){const book=books[id];if(!book||player.books.includes(id)||player.money<book.cost)return;player.money-=book.cost;player.books.push(id);applyBookKnowledge(id);if(id==="playing_the_fish")learnTechnique("hold_pressure");if(id==="advanced_freshwater"||id==="advanced_saltwater")learnTechnique("twitch");gainObsession(0.5,"buying fishing books");addLog("buy","Bought "+book.name+" for $"+book.cost.toFixed(2)+".");shopMessage.textContent="You add "+book.name+" to your shelf.";updateDisplays();renderShopInventory();renderLocationTabs();saveGame();}
+function fishIsKnown(fish){return knowsFishKnowledge(fish.id,"name");}
+function fishFactKnown(fish,field){return knowsFishKnowledge(fish.id,field);}
 function buyBait(name,amount,cost){ if(player.money<cost){shopMessage.textContent="You don't have enough money.";return;}player.money-=cost;player.gear.bait[name]+=amount;addLog("buy","Bought "+amount+" "+name+"s for $"+cost.toFixed(2)+".");updateDisplays();renderGearInventory();renderShopInventory();saveGame(); }
 
 function updateInventoryDisplay(){ const totalWeight=player.inventory.reduce((s,f)=>s+f.weight,0),totalValue=player.inventory.reduce((s,f)=>s+f.baseValue,0);inventoryCountDisplay.textContent=player.inventory.length;inventoryLimitDisplay.textContent=getInventoryLimit();totalWeightDisplay.textContent=totalWeight.toFixed(2);totalValueDisplay.textContent=totalValue.toFixed(2);renderCreel();renderMarketInventory(); }
@@ -240,88 +292,52 @@ function openJournal(){
 function closeJournal(){
   journalPanel.style.display="none";pierPanel.style.display="block";topNav.style.display="flex";refreshLocationUI();resetFishing();startEnvironmentAnimations();
 }
-const journalSectionOpen={freshwater:true,saltwater:false};
-
+let journalWaterType="freshwater";
 function renderJournal(selectedId){
+  const requested=fishTypes.find(f=>f.id===selectedId);if(requested)journalWaterType=requested.waterType;
   journalSpecies.innerHTML="";
-  const caughtFish=fishTypes.find(f=>player.catchHistory.some(c=>c.speciesId===f.id));
-  const initial=selectedId||caughtFish?.id||fishTypes[0].id;
-  const selectedFish=fishTypes.find(f=>f.id===initial);
-  if(selectedFish) journalSectionOpen[selectedFish.waterType]=true;
-
-  for(const waterType of ["freshwater","saltwater"]){
-    const sectionFish=fishTypes.filter(f=>f.waterType===waterType);
-    const title=document.createElement("button");
-    title.type="button";
-    title.className="journalSectionTitle";
-    title.textContent=(journalSectionOpen[waterType]?"▾ ":"▸ ")+(waterType==="freshwater"?"FRESHWATER":"SALTWATER");
-    title.setAttribute("aria-expanded",journalSectionOpen[waterType]?"true":"false");
-    title.addEventListener("click",()=>{journalSectionOpen[waterType]=!journalSectionOpen[waterType];renderJournal(initial);});
-    journalSpecies.appendChild(title);
-
-    if(!journalSectionOpen[waterType]) continue;
-
-    for(const fish of sectionFish){
-      const catches=player.catchHistory.filter(c=>c.speciesId===fish.id);
-      const known=fishIsKnown(fish);
-      const hasTrophy=catches.some(c=>c.trophy);
-      const b=document.createElement("button");
-      b.className=fish.id===initial?"active":"";
-      b.textContent=(known?fish.name:"???")+(known?"  ("+catches.length+")":"")+(hasTrophy?"  🏆":"");
-      b.addEventListener("click",()=>renderJournal(fish.id));
-      journalSpecies.appendChild(b);
-    }
+  for(const b of journalWaterTabs.querySelectorAll("button")){b.classList.toggle("active",b.dataset.water===journalWaterType);b.onclick=()=>{journalWaterType=b.dataset.water;renderJournal();};}
+  const sectionFish=fishTypes.filter(f=>f.waterType===journalWaterType);
+  const caughtFish=sectionFish.find(f=>player.catchHistory.some(c=>c.speciesId===f.id));
+  const initial=(requested&&requested.waterType===journalWaterType)?requested.id:(caughtFish?.id||sectionFish[0]?.id);
+  for(const fish of sectionFish){
+    const catches=player.catchHistory.filter(c=>c.speciesId===fish.id),known=fishIsKnown(fish),hasTrophy=catches.some(c=>c.trophy);
+    const b=document.createElement("button");b.className=fish.id===initial?"active":"";b.textContent=(known?fish.name:"???")+(known?"  ("+catches.length+")":"")+(hasTrophy?"  🏆":"");b.addEventListener("click",()=>renderJournal(fish.id));journalSpecies.appendChild(b);
   }
-  renderJournalEntry(initial);
+  if(initial)renderJournalEntry(initial);
 }
 function renderJournalEntry(fishId){
   const fish=fishTypes.find(f=>f.id===fishId);if(!fish)return;
   const caught=player.catchHistory.filter(c=>c.speciesId===fish.id);
   const known=fishIsKnown(fish);
-  const largest=known?Math.max(...caught.map(c=>c.weight)):null;
+  const largest=caught.length?Math.max(...caught.map(c=>c.weight)):null;
   const allTime=player.meta.allTimeBests?.[fish.id]||null;
   const caughtLocations=[...new Set(caught.map(c=>locations[c.location]?.name||c.location).filter(Boolean))];
   const guideLocations=Object.entries(locationFishWeights).filter(([,weights])=>(weights[fish.id]||0)>0).map(([id])=>locations[id]?.name||id);
   const unknown='<span class="journalUnknown">???</span>';
-  const preferredBait=Object.entries(fish.baitPreferences).sort((a,b)=>b[1]-a[1])[0]?.[0]||"?";
+  const preferredBait=Object.entries(fish.baitPreferences).filter(([,v])=>v>1).sort((a,b)=>b[1]-a[1]).map(([name])=>name).join(", ")||"No strong preference";
   const times=Object.entries(fish.timePreferences||{}).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]).join(", ");
   const depths=Object.entries(fish.depthPreferences||{}).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([d])=>DEPTH_LABELS[d]).join(", ");
+  const caughtDepths=[...new Set(caught.map(c=>c.depth).filter(Boolean))].map(d=>DEPTH_LABELS[d]||d);
   const trophies=caught.filter(c=>c.trophy).length;
 
-  if(!known){
-    journalEntry.innerHTML=[
-      '<div class="journalName">???</div>',
-      '<div class="journalStat"><span class="journalLabel">Water</span>'+(fish.waterType==="freshwater"?"Freshwater":"Saltwater")+'</div>',
-      '<div class="journalStat"><span class="journalLabel">Caught</span>0</div>',
-      '<div class="journalStat"><span class="journalLabel">Largest this run</span>—</div>',
-      '<div class="journalStat"><span class="journalLabel">All-Time Best</span>'+(allTime?allTime.toFixed(2)+' lb':'—')+'</div>',
-      '<div class="journalStat"><span class="journalLabel">Weight</span>'+unknown+'</div>',
-      '<div class="journalStat"><span class="journalLabel">Depth</span>'+unknown+'</div>',
-      '<div class="journalStat"><span class="journalLabel">Best bait</span>'+unknown+'</div>',
-      '<div class="journalStat"><span class="journalLabel">Seasons</span>'+unknown+'</div>',
-      '<div class="journalStat"><span class="journalLabel">Weather</span>'+unknown+'</div>',
-      '<div class="journalStat"><span class="journalLabel">Best times</span>'+unknown+'</div>',
-      '<div class="journalStat"><span class="journalLabel">Bite behavior</span>'+unknown+'</div>',
-      '<div class="journalFishCopy"></div>'
-    ].join("");
-    return;
-  }
-
   journalEntry.innerHTML=[
-    '<div class="journalName">'+fish.name+(trophies?' <span class="trophyIcon" title="Trophy caught">🏆</span>':'')+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Water</span>'+(fish.waterType==="freshwater"?"Freshwater":"Saltwater")+'</div>',
+    '<div class="journalName">'+(known?fish.name:unknown)+(trophies?' <span class="trophyIcon" title="Trophy caught">🏆</span>':'')+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Water</span>'+(fishFactKnown(fish,"waterType")?(fish.waterType==="freshwater"?"Freshwater":"Saltwater"):unknown)+'</div>',
     '<div class="journalStat"><span class="journalLabel">Caught</span>'+caught.length+'</div>',
     '<div class="journalStat"><span class="journalLabel">Largest this run</span>'+(largest?largest.toFixed(2)+' lb':'—')+'</div>',
     '<div class="journalStat"><span class="journalLabel">All-Time Best</span>'+(allTime?allTime.toFixed(2)+' lb':'—')+'</div>',
     '<div class="journalStat"><span class="journalLabel">Trophies</span>'+trophies+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Seen at</span>'+(hasFindingGuide(fish)?guideLocations.join(", "):(caughtLocations.length?caughtLocations.join(", "):unknown))+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Weight</span>'+(hasPracticalGuide(fish)?fish.minWeight.toFixed(1)+'–'+fish.maxWeight.toFixed(1)+' lb':unknown)+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Depth</span>'+(hasFindingGuide(fish)?depths:unknown)+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Best bait</span>'+(hasPracticalGuide(fish)?preferredBait:unknown)+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Seasons</span>'+(hasPracticalGuide(fish)?fish.seasonPreferences.join(", "):unknown)+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Weather</span>'+(hasFindingGuide(fish)?fish.weatherPreferences.join(", "):unknown)+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Best times</span>'+(hasFindingGuide(fish)?(times||"Varied"):unknown)+'</div>',
-    '<div class="journalStat"><span class="journalLabel">Bite behavior</span>'+(hasAdvancedGuide(fish)?describeNibbleBehavior(fish):unknown)+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Seen at</span>'+(fishFactKnown(fish,"locations")?guideLocations.join(", "):(caughtLocations.length?caughtLocations.join(", "):unknown))+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Weight</span>'+(fishFactKnown(fish,"weight")?fish.minWeight.toFixed(1)+'–'+fish.maxWeight.toFixed(1)+' lb':unknown)+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Trophy weight</span>'+(fishFactKnown(fish,"trophyWeight")?fish.trophyWeight.toFixed(1)+' lb':unknown)+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Rarity</span>'+(fishFactKnown(fish,"rarity")?fish.rarity.replaceAll("_"," "):unknown)+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Depth</span>'+(fishFactKnown(fish,"depth")?depths:(caughtDepths.length?caughtDepths.join(", "):unknown))+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Best bait</span>'+(fishFactKnown(fish,"bait")?preferredBait:unknown)+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Seasons</span>'+(fishFactKnown(fish,"seasons")?fish.seasonPreferences.join(", "):unknown)+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Weather</span>'+(fishFactKnown(fish,"weather")?fish.weatherPreferences.join(", "):unknown)+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Best times</span>'+(fishFactKnown(fish,"time")?(times||"Varied"):unknown)+'</div>',
+    '<div class="journalStat"><span class="journalLabel">Bite behavior</span>'+(fishFactKnown(fish,"behavior")?describeNibbleBehavior(fish):unknown)+'</div>',
     '<div class="journalFishCopy"></div>'
   ].join("");
 }
@@ -383,11 +399,23 @@ function renderCelestial(grid){
 function renderWeatherOverlay(grid){
   const name=world.weather?.name||"Clear";
   if(name==="Clear")return;
+  const raining=name==="Light Rain"||name==="Rain"||name==="Heavy Rain";
   const drift=(skyFrame%6)-2;
   const base=Math.max(1,Math.min(SKY_WIDTH-14,18+drift));
-  stampSky(grid,1,base,"   .--.");stampSky(grid,2,base-2,".-(    ).");stampSky(grid,3,base-3,"(_________)");
-  if(name==="Light Rain"||name==="Rain"||name==="Heavy Rain"){
-    const drops=name==="Light Rain"?"   '   '  ":name==="Rain"?" ' ' ' ' ":"'' '' '' ''";stampSky(grid,4,base-2,drops);
+  // Rainy clouds sit one row higher to leave room for visible falling precipitation.
+  const cloudRow=raining?0:1;
+  stampSky(grid,cloudRow,base,"   .--.");stampSky(grid,cloudRow+1,base-2,".-(    ).");stampSky(grid,cloudRow+2,base-3,"(_________)");
+  if(!raining)return;
+  const phase=skyFrame%4;
+  if(name==="Light Rain"){
+    const sparse=[[[3,1],[4,8]],[[3,7],[4,13]],[[3,3],[4,10]],[[3,10],[4,5]]][phase];
+    sparse.forEach(([row,off])=>stampSky(grid,row,base-3+off,"'"));
+  }else if(name==="Rain"){
+    const rows=[" '   '  '   '","   '  '   '  '"," '   '   '   '"];
+    stampSky(grid,3,base-4,rows[phase%3]);stampSky(grid,4,base-4,rows[(phase+1)%3]);
+  }else{
+    const rows=[" /  /  /  /  / ","/  /  /  /  /  /","  /  /  /  /  / "];
+    stampSky(grid,3,base-5,rows[phase%3]);stampSky(grid,4,base-5,rows[(phase+1)%3]);
   }
 }
 function renderSky(){const grid=blankSky();renderCelestial(grid);renderWeatherOverlay(grid);sky.textContent=grid.map(r=>r.join("").replace(/\s+$/,"" )).join("\n");}
@@ -454,6 +482,10 @@ setInterval(()=>{document.querySelectorAll(".lineDot").forEach(dot=>{Math.random
 
 inventoryLimitDisplay.textContent=getInventoryLimit();
 const loadedSave=loadGame();
+// Migrate existing saves into the field-based knowledge model. Existing catches and owned books teach the same facts they did before.
+for(const fish of fishTypes) ensureFishKnowledge(fish.id);
+for(const rec of (player.catchHistory||[])){ if(rec?.speciesId) learnFishKnowledge(rec.speciesId,["name","waterType"]); }
+for(const bookId of (player.books||[])) applyBookKnowledge(bookId);
 if(!loadedSave){generateSeasonWeather();addLog("world","Spring, Day 1 begins.");addLog("world",describeWeather());}else ensureSeasonWeather();
 state="ready";
 refreshLocationUI();updateDisplays();updateInventoryDisplay();renderGearInventory();renderShopInventory();resetFishing();startEnvironmentAnimations();

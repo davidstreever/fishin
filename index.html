@@ -67,20 +67,21 @@
       <div id="debugForcedSummary" class="debugForcedSummary"></div>
     </aside>
     <div id="fishingHeader" class="fishingHeader">
-      <span id="seasonDisplay">Spring</span> • Day <span id="dayDisplay">1</span> • Year <span id="yearDisplay">1</span> • <span id="timeDisplay">Dawn</span>
+      <span id="seasonDisplay">Spring</span> • Day <span id="dayDisplay">1</span> • Year <span id="yearDisplay">1</span> • <span id="timeDisplay">Dawn</span> • <span id="temperatureDisplay">—° MILD</span>
       <span class="headerMoney">$<span id="moneyDisplay">0.00</span></span>
     </div>
     <div id="status">
       <div id="fishingMetaRow" class="fishingMetaRow">
         <div id="locationDescription" class="locationDescription"></div>
         <div id="currentGear" class="currentGear">
-          <div>Rod: <span id="rodDisplay">Old Rod</span></div>
-          <div>Reel: <span id="reelDisplay">Old Reel</span></div>
-          <div>Bait: <span id="baitTypeDisplay">Worm</span> (<span id="baitAmountDisplay">12</span>)</div>
-          <div>Special: <span id="specialItemDisplay">—</span></div>
+          <label><span>Rod</span><select id="rodGearSelect"></select></label>
+          <label><span>Reel</span><select id="reelGearSelect"></select></label>
+          <label><span>Tackle</span><select id="tackleGearSelect"></select></label>
+          <label><span>Bait</span><select id="baitGearSelect"></select><span id="baitAmountDisplay" class="gearCount">×12</span></label>
+          <label id="specialGearRow" style="display:none"><span>Special</span><select id="specialGearSelect"></select></label>
         </div>
       </div>
-      <div id="environmentRow" class="environmentRow"><div id="sky"></div><div id="temperatureDisplay" class="temperatureDisplay"></div></div>
+      <div id="environmentRow" class="environmentRow"><div id="sky"></div></div>
       <div id="water"></div>
 
       <div id="fishingArea">
@@ -134,6 +135,10 @@
     <div class="journalHeader">
       <div>Your catches are recorded automatically. Books reveal additional details.</div>
       <button id="journalReturnButton">Return to Fishing</button>
+    </div>
+    <div id="journalWaterTabs" class="journalWaterTabs">
+      <button type="button" data-water="freshwater">Freshwater</button>
+      <button type="button" data-water="saltwater">Saltwater</button>
     </div>
     <div class="journalGrid">
       <div id="journalSpecies" class="journalSpecies"></div>

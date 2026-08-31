@@ -10,3 +10,12 @@ Changes in this patch:
 - Hold Pressure behavior is unchanged.
 - Fish stats are unchanged in this patch so the systemic change can be playtested cleanly.
 - Includes the prior line-display accuracy fix and 60/80/95% line warning thresholds.
+
+Depth tackle progression update:
+- Starter tackle casts randomly, weighted heavily toward shallow water.
+- Surface Float targets Shallow (95% accuracy).
+- Split-Shot Kit targets Mid (85% accuracy).
+- Egg Sinker targets Deep (95% accuracy).
+- Adjustable Dual Diver targets any available depth (100% accuracy).
+- Random remains selectable after buying tackle.
+- Legacy Basic Tackle Kit saves migrate to the three basic depth tools.
