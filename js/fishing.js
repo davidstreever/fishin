@@ -172,7 +172,7 @@ function spendFishingUnit(finishCurrentEncounter=false){
   return true;
 }
 function beginWaiting(){
-  state="waiting";fishButton.disabled=false;fishButton.textContent=knowsTechnique("twitch")?"Twitch [J]":"Line Out";pullUpButton.style.display="inline-block";pullUpButton.textContent="Pull Up [L]";message.textContent="";
+  state="waiting";fishButton.disabled=!knowsTechnique("twitch");fishButton.textContent=knowsTechnique("twitch")?"Twitch [J]":"Line Out";pullUpButton.style.display="inline-block";pullUpButton.textContent="Pull Up [L]";message.textContent="";
   // The initial cast commits one fishing time unit, but it is allowed to finish.
   if(!spendFishingUnit(true)) return;
   scheduleCurrentEncounter();
@@ -209,7 +209,7 @@ function landJunk(){
 function scheduleNextNibble(delay){ clearTimeout(nibbleTimer);nibbleTimer=setTimeout(()=>{if((state!=="waiting"&&state!=="nibble")||fishHasLeft)return;firstNibble();},delay); }
 function firstNibble(){
   if(fishHasLeft||!currentFish)return;state="nibble";nibbleCount++;lastNibbleAt=Date.now();lineDepth=nibbleDepth;drawLine();
-  message.textContent=nibbleCount===1?"A little nibble...":"Another little nibble...";fishButton.textContent=knowsTechnique("twitch")?"Twitch [J]":"Line Out";pullUpButton.style.display="inline-block";pullUpButton.textContent="Pull Up [L]";resolveNibble();
+  message.textContent=nibbleCount===1?"A little nibble...":"Another little nibble...";fishButton.disabled=!knowsTechnique("twitch");fishButton.textContent=knowsTechnique("twitch")?"Twitch [J]":"Line Out";pullUpButton.style.display="inline-block";pullUpButton.textContent="Pull Up [L]";resolveNibble();
 }
 function resolveNibble(twitchBonus=0){
   if(!currentFish||fishHasLeft)return;const b=currentFish.nibbleBehavior;const biteChance=clamp(b.biteChance+Math.max(0,nibbleCount-1)*b.biteGrowth+twitchBonus,0,0.98);
@@ -233,7 +233,7 @@ function startDisturbanceDecay(){clearInterval(disturbanceTimer);disturbanceTime
 
 function restartWaitingAfterFish(extraDelay=0){
   currentFish=null;currentWeight=0;nibbleCount=0;lastNibbleAt=0;fishHasLeft=false;state="waiting";
-  fishButton.textContent=knowsTechnique("twitch")?"Twitch [J]":"Line Out";pullUpButton.style.display="inline-block";pullUpButton.textContent="Pull Up [L]";
+  fishButton.disabled=!knowsTechnique("twitch");fishButton.textContent=knowsTechnique("twitch")?"Twitch [J]":"Line Out";pullUpButton.style.display="inline-block";pullUpButton.textContent="Pull Up [L]";
   // The line stays out; waiting for the next encounter costs another unit.
   nibbleTimer=setTimeout(()=>{
     if(state!=="waiting")return;
@@ -256,7 +256,7 @@ function earlyPull(){if(state!=="waiting")return;clearTimeout(nibbleTimer);if(cu
 function addLostFishLog(){gainObsession(obsessionForLoss(currentWeight),"the one that got away");addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb.");}
 function retractLine(){fishButton.disabled=true;lineTimer=setInterval(()=>{lineDepth--;drawLine();if(lineDepth<=0){clearInterval(lineTimer);resetFishing();}},100);}
 
-function fishBites(){if(state!=="nibble")return;state="bite";message.textContent="BITE!";fishButton.textContent="HOOK [H]";pullUpButton.style.display="inline-block";pullUpButton.textContent="Pull Up [L]";clearTimeout(biteTimer);biteTimer=setTimeout(missHook,currentFish.hookWindow);}
+function fishBites(){if(state!=="nibble")return;state="bite";message.textContent="BITE!";fishButton.disabled=false;fishButton.textContent="HOOK [H]";pullUpButton.style.display="inline-block";pullUpButton.textContent="Pull Up [L]";clearTimeout(biteTimer);biteTimer=setTimeout(missHook,currentFish.hookWindow);}
 function hookFish(){if(state!=="bite")return;clearTimeout(biteTimer);clearInterval(disturbanceTimer);pullUpButton.style.display="none";consumeBait();startFight();}
 function missHook(){
   if(state!=="bite")return;gainObsession(obsessionForLoss(currentWeight),"missed big fish");clearInterval(disturbanceTimer);pullUpButton.style.display="none";consumeBait();state="finished";

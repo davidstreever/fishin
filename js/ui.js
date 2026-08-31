@@ -117,7 +117,7 @@ function updateTimeControls(){
   }
   else if(state==="waiting" || state==="nibble"){
     if(knowsTechnique("twitch")){fishButton.disabled=false;fishButton.textContent="Twitch [J]";}
-    else {fishButton.disabled=true;fishButton.textContent="Line Out";fishButton.classList.add("lineOutStatus");}
+    else {fishButton.disabled=true;fishButton.textContent="Line Out";}
   }
   else if(state==="bite"){
     fishButton.disabled=false;
