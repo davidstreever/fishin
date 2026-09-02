@@ -44,3 +44,10 @@ body{font-family:monospace;max-width:760px;margin:50px auto;padding:20px;backgro
 .gearPickerSummary select{min-width:0;max-width:100%}
 .baitShopRow{grid-template-columns:minmax(0,1fr) auto auto auto;gap:10px}.baitQuantityChoices{display:flex;align-items:center;white-space:nowrap;color:#666}.baitQuantityChoice{border:0!important;background:transparent!important;padding:2px 3px!important;font:inherit;color:inherit;cursor:pointer}.baitQuantityChoice.active{font-weight:bold;text-decoration:underline}.baitShopPrice{min-width:48px;text-align:right;white-space:nowrap}
 
+
+/* Text-like gear pickers: right aligned with a subtle dropdown cue. */
+.currentGear label{grid-template-columns:58px minmax(0,1fr) auto}
+.currentGear select,.gearPickerSummary select{text-align:right;text-align-last:right;padding-right:14px;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 7px) 50%,calc(100% - 3px) 50%;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+.gearPickerSummary>div{grid-template-columns:70px minmax(0,1fr)}
+.gearPickerSummary select{justify-self:stretch;width:100%}
+.pubPanel{max-width:620px}.pubTitle{font-size:20px;margin:8px 0 12px}.pubMessage{min-height:54px;white-space:pre-line;margin:18px 0;color:#555}.pubCharacters{padding-left:22px}.pubCharacters>li{margin:9px 0}.textLink,.pubTalkActions button{border:0!important;background:transparent!important;padding:0!important;font:inherit;color:inherit;cursor:pointer;text-decoration:none}.textLink:hover,.pubTalkActions button:hover{text-decoration:underline}.pubTalkActions{display:block;padding-left:22px;margin:7px 0 10px}.pubTalkActions li{margin:5px 0}.pubExitActions{margin-top:10px}

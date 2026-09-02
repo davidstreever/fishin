@@ -170,6 +170,9 @@ function catchUpSleep(){
 }
 
 function advanceDay(){
+  player.pub.drinksToday=0;
+  player.pub.pubLockedDay=null;
+  if(player.pub.oldTimerAffinity===-2) player.pub.oldTimerAffinity=-1;
   world.seasonDay++;
   if(world.seasonDay>DAYS_PER_SEASON){ world.seasonDay=1; advanceSeason(); generateSeasonWeather(); }
   else applyWeatherForCurrentPeriod();
@@ -211,10 +214,13 @@ function goToLocation(location){
   if(state!=="ready" && state!=="finished") return;
   if(isWorkDue() || world.period==="Night") return;
   clearFishingTimers(); stopEnvironmentAnimations();
-  const destinationName=location==="market"?"Market":"Tackle Shop";
-  addLog("world","You head to the "+destinationName+".");
+  const destinationName=location==="market"?"Fish Market":"Tackle Shop";
+  const periodName=world.period==="Morning"?"morning":world.period==="Day"?"day":"evening";
+  addLog("world","You spend the rest of the "+periodName+" at the "+destinationName+".");
   consumePeriodForTravel();
   world.screen=location;
+  // Do not carry the previous sale confirmation into a new Market visit.
+  if(location==="market") marketMessage.textContent="";
   pierPanel.style.display="none";
   journalPanel.style.display="none";
   marketPanel.style.display=location==="market"?"block":"none";
@@ -226,6 +232,6 @@ function goToLocation(location){
 
 function returnToFishing(){
   world.screen="fishing";
-  marketPanel.style.display="none"; shopPanel.style.display="none"; journalPanel.style.display="none"; pierPanel.style.display="block"; topNav.style.display="flex";
+  marketPanel.style.display="none"; shopPanel.style.display="none"; journalPanel.style.display="none"; if(typeof pubPanel!=="undefined"&&pubPanel)pubPanel.style.display="none"; pierPanel.style.display="block"; topNav.style.display="flex";
   refreshLocationUI(); resetFishing(); updateDisplays(); updateInventoryDisplay(); renderGearInventory(); startEnvironmentAnimations(); saveGame();
 }

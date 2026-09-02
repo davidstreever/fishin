@@ -26,9 +26,12 @@
       <div>CHANGE WEATHER</div>
       <select id="debugWeatherSelect">
         <option value="">Choose...</option>
-        <option value="Sunny">Sunny</option>
-        <option value="Rainy">Rainy</option>
+        <option value="Clear">Clear</option>
+        <option value="Partly Cloudy">Partly Cloudy</option>
         <option value="Cloudy">Cloudy</option>
+        <option value="Light Rain">Light Rain</option>
+        <option value="Rain">Rain</option>
+        <option value="Heavy Rain">Heavy Rain</option>
       </select>
     </div>
     <div class="debugSection">
@@ -50,6 +53,7 @@
       <button id="marketButton" class="utilityTab">Market</button>
       <button id="shopButton" class="utilityTab">Shop</button>
       <button id="journalButton" class="utilityTab">Journal</button>
+      <button id="pubButton" class="utilityTab">Pub</button>
     </div>
   </div>
 
@@ -129,6 +133,21 @@
     </div>
     <div id="shopMessage">Hooks, bait, and things you probably don't need.</div>
     <div id="shopInventory"></div>
+  </div>
+
+  <div id="pubPanel" class="pubPanel" style="display:none">
+    <div class="panelHeader">
+      <div class="locationInfo"><span id="pubCalendarDisplay"></span><br>Money: $<span id="pubMoneyDisplay">0.00</span></div>
+      <button id="pubReturnButton">Return to Fishing</button>
+    </div>
+    <h2 class="pubTitle">The Black Dog</h2>
+    <p>Dim lights, drunk patrons. This is the closest thing to a British pub in Weymouth.</p>
+    <ul id="pubCharacters" class="pubCharacters">
+      <li><span>You see an old fisherman sitting by himself at the bar.</span> <button id="pubTalkButton" class="textLink">[Talk]</button><ul id="pubTalkActions" class="pubTalkActions" style="display:none"></ul></li>
+      <li><span>The bartender looks at you with cold, dead eyes.</span> <button id="pubBartenderTalkButton" class="textLink">[Talk]</button><ul id="pubBartenderActions" class="pubTalkActions" style="display:none"></ul></li>
+    </ul>
+    <div id="pubMessage" class="pubMessage"></div>
+    <div id="pubExitActions" class="pubExitActions" style="display:none"><button id="pubLeaveButton" class="textLink">[Leave]</button></div>
   </div>
 
   <div id="journalPanel">

@@ -1,7 +1,7 @@
 // Fishin' — ui.js
 
 const locationTitle=document.getElementById("locationTitle"),topNav=document.getElementById("topNav"),locationTabs=document.getElementById("locationTabs"),locationDescription=document.getElementById("locationDescription"),depthControls=document.getElementById("depthControls");
-const pierPanel=document.getElementById("pierPanel"),marketPanel=document.getElementById("marketPanel"),shopPanel=document.getElementById("shopPanel"),journalPanel=document.getElementById("journalPanel");
+const pierPanel=document.getElementById("pierPanel"),marketPanel=document.getElementById("marketPanel"),shopPanel=document.getElementById("shopPanel"),journalPanel=document.getElementById("journalPanel"),pubPanel=document.getElementById("pubPanel");
 const seasonDisplay=document.getElementById("seasonDisplay"),dayDisplay=document.getElementById("dayDisplay"),yearDisplay=document.getElementById("yearDisplay"),timeDisplay=document.getElementById("timeDisplay");
 const introOverlay=document.getElementById("introOverlay"),introText=document.getElementById("introText"),introChoices=document.getElementById("introChoices");
 const marketCalendarDisplay=document.getElementById("marketCalendarDisplay"),shopCalendarDisplay=document.getElementById("shopCalendarDisplay");
@@ -10,7 +10,7 @@ const rodGearSelect=document.getElementById("rodGearSelect"),reelGearSelect=docu
 const sky=document.getElementById("sky"),water=document.getElementById("water"),lineStage=document.getElementById("lineStage"),tensionGrid=document.getElementById("tensionGrid"),tensionFillLayer=document.getElementById("tensionFillLayer"),line=document.getElementById("line"),message=document.getElementById("message"),hint=document.getElementById("hint");
 const fightPanel=document.getElementById("fightPanel");
 const normalControls=document.getElementById("normalControls"),fightControls=document.getElementById("fightControls"),fishButton=document.getElementById("fishButton"),pullUpButton=document.getElementById("pullUpButton"),sleepButton=document.getElementById("sleepButton"),quitJobButton=document.getElementById("quitJobButton"),journalButton=document.getElementById("journalButton"),journalReturnButton=document.getElementById("journalReturnButton"),fightReelButton=document.getElementById("fightReelButton"),fightPressureButton=document.getElementById("fightPressureButton"),cutLineButton=document.getElementById("cutLineButton");
-const marketButton=document.getElementById("marketButton"),shopButton=document.getElementById("shopButton"),marketReturnButton=document.getElementById("marketReturnButton"),shopReturnButton=document.getElementById("shopReturnButton");
+const marketButton=document.getElementById("marketButton"),shopButton=document.getElementById("shopButton"),marketReturnButton=document.getElementById("marketReturnButton"),shopReturnButton=document.getElementById("shopReturnButton"),pubButton=document.getElementById("pubButton"),pubReturnButton=document.getElementById("pubReturnButton"),pubTalkButton=document.getElementById("pubTalkButton"),pubBartenderTalkButton=document.getElementById("pubBartenderTalkButton"),pubTalkActions=document.getElementById("pubTalkActions"),pubBartenderActions=document.getElementById("pubBartenderActions"),pubCharacters=document.getElementById("pubCharacters"),pubExitActions=document.getElementById("pubExitActions"),pubLeaveButton=document.getElementById("pubLeaveButton"),pubMessage=document.getElementById("pubMessage"),pubCalendarDisplay=document.getElementById("pubCalendarDisplay"),pubMoneyDisplay=document.getElementById("pubMoneyDisplay");
 const marketMessage=document.getElementById("marketMessage"),shopMessage=document.getElementById("shopMessage"),marketInventory=document.getElementById("marketInventory"),sellAllButton=document.getElementById("sellAllButton"),shopInventory=document.getElementById("shopInventory");
 const gearInventory=document.getElementById("gearInventory"),creel=document.getElementById("creel"),gameLog=document.getElementById("gameLog"),journalSpecies=document.getElementById("journalSpecies"),journalEntry=document.getElementById("journalEntry"),journalWaterTabs=document.getElementById("journalWaterTabs"),inventoryCountDisplay=document.getElementById("inventoryCount"),inventoryLimitDisplay=document.getElementById("inventoryLimit"),totalWeightDisplay=document.getElementById("totalWeight"),totalValueDisplay=document.getElementById("totalValue");
 const debugResetButton=document.getElementById("debugResetButton"),debugAddBaitButton=document.getElementById("debugAddBaitButton"),debugAddMoneyButton=document.getElementById("debugAddMoneyButton"),debugTravelToggle=document.getElementById("debugTravelToggle"),debugFightMetersToggle=document.getElementById("debugFightMetersToggle"),debugFishStatsToggle=document.getElementById("debugFishStatsToggle"),debugSpecifyFishToggle=document.getElementById("debugSpecifyFishToggle"),debugWeatherSelect=document.getElementById("debugWeatherSelect"),debugSeasonSelect=document.getElementById("debugSeasonSelect");
@@ -50,85 +50,55 @@ function renderGameLog(){ gameLog.innerHTML=""; for(const entry of [...gameLogEn
 
 function updateDisplays(){
   seasonDisplay.textContent=world.season; dayDisplay.textContent=world.seasonDay; yearDisplay.textContent=world.year||1; timeDisplay.textContent=getTimeLabel(); marketCalendarDisplay.textContent=getCalendarLabel(); shopCalendarDisplay.textContent=getCalendarLabel();
-  moneyDisplay.textContent=player.money.toFixed(2); marketMoneyDisplay.textContent=player.money.toFixed(2); shopMoneyDisplay.textContent=player.money.toFixed(2);
+  moneyDisplay.textContent=player.money.toFixed(2); marketMoneyDisplay.textContent=player.money.toFixed(2); shopMoneyDisplay.textContent=player.money.toFixed(2); if(pubMoneyDisplay)pubMoneyDisplay.textContent=player.money.toFixed(2); if(pubCalendarDisplay)pubCalendarDisplay.textContent=getCalendarLabel();
   renderActiveGearControls(); if(temperatureDisplay){const w=world.weather||{};temperatureDisplay.textContent=(w.temperatureF??"—")+"° "+String(w.temperature||"MILD").toLowerCase().replace(/^./,c=>c.toUpperCase());}
   inventoryLimitDisplay.textContent=getInventoryLimit();
   updateDepthDisplay();
 }
 
-function updateTimeControls(){
-  pullUpButton.style.display=["waiting","nibble","bite"].includes(state)?"inline-block":"none"; pullUpButton.textContent="Pull Up [L]"; cutLineButton.textContent="Cut Line [K]"; fightReelButton.textContent=isReeling?"REELING... [↑]":"HOLD TO REEL [↑]"; if(!isHoldingPressure)fightPressureButton.textContent="HOLD PRESSURE [↓]";
-  sleepButton.style.display="none";
-  quitJobButton.style.display="none";
-
-  if(world.period==="Night"){
-    sleepButton.style.display="inline-block";
-    sleepButton.title="Go to sleep."; sleepButton.textContent="Sleep [S]";
-  } else if(hasSleepDebt() && ["Morning","Day"].includes(world.period)){
-    sleepButton.style.display="inline-block";
-    sleepButton.title="Catch up on sleep debt. This uses the rest of the current period."; sleepButton.textContent="Sleep [S]";
-  }
-
-  if(state!=="ready"&&state!=="finished"){
-    marketButton.disabled=true;
-    shopButton.disabled=true;
-    sleepButton.disabled=true;
-    return;
-  }
-
-  sleepButton.disabled=false;
-
-  if(isWorkDue()){
-    fishButton.disabled=false;
-    fishButton.textContent="Go to Work [W]";
-    marketButton.disabled=true;
-    shopButton.disabled=true;
-    if(canQuitJob()) quitJobButton.style.display="inline-block";
-    return;
-  }
-
-  if(isSleepChoice()){
-    marketButton.disabled=true;
-    shopButton.disabled=true;
-
-    if(canNightFish()){
-      fishButton.disabled=false;
-      fishButton.textContent="Keep Fishing";
-    } else {
-      fishButton.disabled=true;
-      fishButton.textContent="Night";
+function updateFishingControls(){
+  const activeEncounter=!['ready','finished'].includes(state);
+  if(activeEncounter){
+    if(state==='waiting'||state==='nibble'){
+      fishButton.disabled=!knowsTechnique('twitch'); fishButton.textContent=knowsTechnique('twitch')?'Twitch [J]':'Line Out';
+      pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Pull Up [L]'; return;
     }
-
+    if(state==='bite'){
+      fishButton.disabled=false; fishButton.textContent='HOOK [H]';
+      pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Pull Up [L]'; return;
+    }
+    if(state==='junk'){
+      fishButton.disabled=false; fishButton.textContent='Pull Up';
+      pullUpButton.style.display='none'; return;
+    }
+    fishButton.disabled=true; pullUpButton.style.display='none'; return;
+  }
+  pullUpButton.style.display='none';
+  if(isWorkDue()){fishButton.disabled=false;fishButton.textContent='Go to Work [W]';return;}
+  if(isSleepChoice()){
+    if(canNightFish()){fishButton.disabled=false;fishButton.textContent='Keep Fishing';}
+    else{fishButton.disabled=true;fishButton.textContent='Night';}
     return;
   }
-
-  marketButton.disabled=world.period==="Night";
-  shopButton.disabled=world.period==="Night";
-
   const baitCount=player.gear.bait[player.selectedBait];
-
-  if(player.inventory.length>=getInventoryLimit()){
-    fishButton.disabled=true;
-    fishButton.textContent="Creel Full";
-  }
-  else if(baitCount<=0){
-    fishButton.disabled=true;
-    fishButton.textContent="No "+player.selectedBait+"s";
-  }
-  else if(state==="waiting" || state==="nibble"){
-    if(knowsTechnique("twitch")){fishButton.disabled=false;fishButton.textContent="Twitch [J]";}
-    else {fishButton.disabled=true;fishButton.textContent="Line Out";}
-  }
-  else if(state==="bite"){
-    fishButton.disabled=false;
-    fishButton.textContent="HOOK [H]";
-  }
-  else {
-    fishButton.disabled=false;
-    fishButton.textContent="Cast Line [Space]";
-  }
+  if(player.inventory.length>=getInventoryLimit()){fishButton.disabled=true;fishButton.textContent='Creel Full';}
+  else if(baitCount<=0){fishButton.disabled=true;fishButton.textContent='No '+player.selectedBait+'s';}
+  else{fishButton.disabled=false;fishButton.textContent='Cast Line [Space]';}
 }
 
+function updateTimeControls(){
+  if(pubButton){pubButton.disabled=!pubAvailable() || (state!=="ready"&&state!=="finished");pubButton.title=pubAvailable()?"The Black Dog is open.":"The Black Dog opens in the evening.";}
+  cutLineButton.textContent="Cut Line [K]"; fightReelButton.textContent=isReeling?"REELING... [↑]":"HOLD TO REEL [↑]"; if(!isHoldingPressure)fightPressureButton.textContent="HOLD PRESSURE [↓]";
+  sleepButton.style.display="none"; quitJobButton.style.display="none";
+  if(world.period==="Night"){sleepButton.style.display="inline-block";sleepButton.title="Go to sleep.";sleepButton.textContent="Sleep [S]";}
+  else if(hasSleepDebt()&&["Morning","Day"].includes(world.period)){sleepButton.style.display="inline-block";sleepButton.title="Catch up on sleep debt. This uses the rest of the current period.";sleepButton.textContent="Sleep [S]";}
+  const busy=state!=="ready"&&state!=="finished";
+  sleepButton.disabled=busy;
+  marketButton.disabled=busy||isWorkDue()||world.period==="Night";
+  shopButton.disabled=busy||isWorkDue()||world.period==="Night";
+  if(isWorkDue()&&canQuitJob()&&!busy)quitJobButton.style.display="inline-block";
+  updateFishingControls();
+}
 function refreshLocationUI(){
   const loc=locations[world.location];locationTitle.textContent="Fishin': "+loc.name.replace(/^The /,"");locationDescription.textContent=loc.description;renderLocationTabs();updateDepthDisplay();renderDebugFishSelector();
 }
@@ -268,7 +238,7 @@ function applyBookKnowledge(id){
   if(id==="visual_guide_maine_fish") learnAllFishKnowledge(["name","waterType"]);
   if(id==="freshwater_practical") learnFishKnowledgeForWaterType("freshwater",["weight","trophyWeight","rarity","bait","seasons"]);
   if(id==="saltwater_practical") learnFishKnowledgeForWaterType("saltwater",["weight","trophyWeight","rarity","bait","seasons"]);
-  if(id==="finding_freshwater") learnFishKnowledgeForWaterType("freshwater",["locations","depth","weather","time"]);
+  if(id==="finding_freshwater"){ learnFishKnowledgeForWaterType("freshwater",["locations","depth","weather","time"]); player.pub.knowsArcticCharr=true; learnFishKnowledge("arctic_charr",["name","locations","depth"]); }
   if(id==="finding_saltwater") learnFishKnowledgeForWaterType("saltwater",["locations","depth","weather","time"]);
   if(id==="advanced_freshwater") learnFishKnowledgeForWaterType("freshwater",["behavior"]);
   if(id==="advanced_saltwater") learnFishKnowledgeForWaterType("saltwater",["behavior"]);
@@ -284,6 +254,65 @@ function renderMarketInventory(){ marketInventory.innerHTML="";if(!player.invent
 function releaseFish(id){const fish=player.inventory.find(f=>f.id===id);if(!fish)return;fish.status="released";player.inventory=player.inventory.filter(f=>f.id!==id);addLog("catch","Released "+fish.name+" — "+fish.weight.toFixed(2)+" lb.");message.textContent="You release the "+fish.name+".";updateInventoryDisplay();updateTimeControls();saveGame();}
 function sellFish(id){const fish=player.inventory.find(f=>f.id===id);if(!fish)return;player.money+=fish.baseValue;fish.status="sold";player.inventory=player.inventory.filter(f=>f.id!==id);addLog("sale","Sold "+fish.name+" for $"+fish.baseValue.toFixed(2)+".");marketMessage.textContent="Sold "+fish.name+" for $"+fish.baseValue.toFixed(2)+".";updateDisplays();updateInventoryDisplay();renderGearInventory();saveGame();}
 function sellAllFish(){if(!player.inventory.length)return;let total=0;const count=player.inventory.length;for(const f of player.inventory){total+=f.baseValue;f.status="sold";}player.money+=total;player.inventory=[];addLog("sale","Sold "+count+" fish for $"+total.toFixed(2)+".");marketMessage.textContent="You sell your catch for $"+total.toFixed(2)+".";updateDisplays();updateInventoryDisplay();renderGearInventory();saveGame();}
+
+function pubAvailable(){return ["Evening","Night"].includes(world.period) && player.pub.pubLockedDay!==world.season+":"+world.seasonDay;}
+function finishPubAllNighter(){
+  player.condition.nightsSkipped+=1; player.condition.fatigue+=2;
+  addLog("world","You spend the whole night at The Black Dog.");
+  world.period="Morning"; world.timeUnits=0; advanceDay(); player.pub.pubDawnExit=true;
+  pubMessage.textContent="It's way past quitting time. You get off your stool and stumble out the door. The bartender glares at the bar and shakes his head.";
+  showPubLeaveOnly(); updateDisplays(); saveGame();
+}
+function spendPubUnit(){
+  if(world.period==="Night" && world.timeUnits+1>=getPeriodLimit()){
+    world.timeUnits=getPeriodLimit(); finishPubAllNighter(); return false;
+  }
+  advanceFishingTime(); updateDisplays(); saveGame(); return true;
+}
+function resetPubMenus(){pubTalkActions.style.display="none";pubBartenderActions.style.display="none";pubExitActions.style.display="none";pubCharacters.style.display="block";}
+function openPub(){
+  if((state!=="ready"&&state!=="finished")||!pubAvailable())return;
+  clearFishingTimers();stopEnvironmentAnimations();player.pub.pubVisits++;world.screen="pub";
+  pierPanel.style.display="none";marketPanel.style.display="none";shopPanel.style.display="none";journalPanel.style.display="none";pubPanel.style.display="block";topNav.style.display="none";locationTitle.textContent="Fishin': The Black Dog";pubMessage.textContent="";resetPubMenus();
+  if(!spendPubUnit())return;
+  if(player.pub.unacknowledgedTrophy){player.pub.unacknowledgedTrophy=false;player.pub.oldTimerTrophyReactions++;player.pub.oldTimerFriendly=true;pubMessage.textContent='"Heard you caught a big one," says the old-timer. He\'s looking particularly friendly tonight. Maybe it\'s just the beer.';}
+  updateDisplays();saveGame();
+}
+function closePub(){player.pub.pubDawnExit=false;returnToFishing();}
+function setAffinity(n){player.pub.oldTimerAffinity=Math.max(-2,Math.min(2,n));}
+function showPubLeaveOnly(){pubCharacters.style.display="none";pubTalkActions.style.display="none";pubBartenderActions.style.display="none";pubExitActions.style.display="block";}
+function ejectFromPub(){player.pub.pubLockedDay=world.season+":"+world.seasonDay;pubMessage.textContent+='\n\nThe bartender shakes his head and points to the door.';showPubLeaveOnly();saveGame();}
+function orderDrink(){if(player.money<3){pubMessage.textContent="You don't have enough money.";return;}player.money-=3;player.pub.drinksTotal++;player.pub.drinksToday++;if(!spendPubUnit())return;let text="The bartender puts a beer in front of you.\n\nYou drink your beer.";if(player.pub.oldTimerAffinity===-1){setAffinity(0);text+=" You notice the old timer is still ignoring you.";}else if(player.pub.oldTimerAffinity===0){setAffinity(1);text+=" The old man at the bar nods at you.";}pubMessage.textContent=text;updateDisplays();saveGame();}
+function wouldAnnoyOldTimer(){
+  if(player.pub.pubVisits>=3&&!player.pub.oldTimerWarningUsed){player.pub.oldTimerWarningUsed=true;player.pub.oldTimerFriendly=false;pubMessage.textContent="You catch yourself before you say it and annoy him.";saveGame();return true;}return false;
+}
+function buyOldTimerBeer(){if(player.money<3){pubMessage.textContent="You don't have enough money.";return;}player.money-=3;player.pub.oldTimerBeersBought++;if(!spendPubUnit())return;if(player.pub.oldTimerAffinity===-1){setAffinity(-2);player.pub.oldTimerFriendly=false;pubMessage.textContent='"Leave me alone."';ejectFromPub();return;}if(player.pub.oldTimerAffinity===0){setAffinity(1);pubMessage.textContent="He nods amiably.";}else if(player.pub.oldTimerAffinity===1){setAffinity(2);pubMessage.textContent='"Thanks."';}else pubMessage.textContent='"Thanks."';updateDisplays();saveGame();}
+function revealOldTimerTip(){
+  const waterTypes=player.gear.vehicleRepaired?["freshwater","saltwater"]:["freshwater"];
+  if(!player.gear.vehicleRepaired&&Math.random()<0.2){pubMessage.textContent='"You should try saltwater fishing. Whole different thing."';return;}
+  const candidates=[];for(const fish of fishTypes){if(!waterTypes.includes(fish.waterType)||fish.id==="arctic_charr"&&!player.pub.knowsArcticCharr)continue;for(const field of ["bait","weather","locations","depth","time","seasons"]){if(!knowsFishKnowledge(fish.id,field))candidates.push({fish,field});}}
+  if(!candidates.length){pubMessage.textContent='"Fish change their minds. Keep your line wet."';return;}
+  const {fish,field}=randomChoice(candidates);learnFishKnowledge(fish.id,["name",field]);let fact="";
+  if(field==="bait"){const prefs=Object.entries(fish.baitPreferences||{}).filter(x=>x[1]>1).sort((a,b)=>b[1]-a[1]);fact=(prefs[0]?.[0]||"the right bait");pubMessage.textContent='"Did you know '+fish.name+' likes '+fact.toLowerCase()+'?"';}
+  else if(field==="weather"){fact=(fish.weatherPreferences||[])[0]||"changing weather";pubMessage.textContent='"Did you know '+fish.name+' likes '+String(fact).toLowerCase()+' weather?"';}
+  else if(field==="locations"){const locIds=Object.keys(locationFishWeights).filter(id=>(locationFishWeights[id]?.[fish.id]||0)>0);const loc=locations[randomChoice(locIds)];pubMessage.textContent='"You can find big '+fish.name+' in '+(loc?.name||"good water")+'."';}
+  else{pubMessage.textContent='"Did you know '+fish.name+' likes particular '+field+'? Pay attention to it."';}
+}
+function askFishBiting(){
+  if(player.pub.oldTimerFriendly){player.pub.oldTimerFriendly=false;revealOldTimerTip();saveGame();return;}
+  if(player.pub.oldTimerAffinity===0){if(wouldAnnoyOldTimer())return;setAffinity(-1);pubMessage.textContent='"You\'re annoying me."';}
+  else if(player.pub.oldTimerAffinity===-1){setAffinity(-2);pubMessage.textContent="He just glares into his drink.";ejectFromPub();return;}
+  else if(player.pub.oldTimerAffinity>=1){revealOldTimerTip();setAffinity(player.pub.oldTimerAffinity-1);}
+  else pubMessage.textContent="He ignores you.";saveGame();
+}
+function oldTimerHow(){if(player.pub.oldTimerAffinity===-1)pubMessage.textContent="He looks pointedly at the bartender, ignoring you.";else if(player.pub.oldTimerAffinity>=1)pubMessage.textContent='"I\'ve got plenty to complain about, but nobody cares."';else if(player.pub.oldTimerAffinity===0)pubMessage.textContent="He shrugs.";else{pubMessage.textContent='The bartender speaks to you. "We\'re closing now. Leave."\n\nNo one else moves.';ejectFromPub();}}
+function askMovedOn(){learnTechnique("twitch");player.pub.heardTwitchAdvice=true;pubMessage.textContent='"Give the line a little twitch sometimes. Gets their attention."';saveGame();}
+function askStrongFish(){learnTechnique("hold_pressure");player.pub.heardStrongFishAdvice=true;pubMessage.textContent='"When one runs hard, stop cranking. Hold pressure and let it tire itself out."';saveGame();}
+function askRareFish(){player.pub.knowsArcticCharr=true;player.pub.heardRareFishAdvice=true;learnFishKnowledge("arctic_charr",["name","locations","depth"]);pubMessage.textContent='"You know about the arctic charr? You can only catch them in the deepest part of Big Lake."\n\nNow you have a chance to catch Arctic Charr at Big Lake.';saveGame();}
+function addPubChoice(list,text,fn){const li=document.createElement("li"),b=document.createElement("button");b.type="button";b.textContent="["+text+"]";b.onclick=fn;li.appendChild(b);list.appendChild(li);}
+function showOldTimerTalk(){player.pub.oldTimerTalks++;pubBartenderActions.style.display="none";pubTalkActions.innerHTML="";pubTalkActions.style.display="block";addPubChoice(pubTalkActions,"How's it going?",oldTimerHow);addPubChoice(pubTalkActions,"Are the fish biting?",askFishBiting);if(player.pub.oldTimerAffinity>=0&&player.pub.fishMovedOnCount>0&&!player.pub.heardTwitchAdvice)addPubChoice(pubTalkActions,"Ask about fish that nibble and swim away",askMovedOn);if(player.pub.oldTimerAffinity>=1&&player.pub.lineBrokenDuringSurge&&!player.pub.heardStrongFishAdvice)addPubChoice(pubTalkActions,"Ask about fish that are too strong to reel in",askStrongFish);if(player.pub.oldTimerAffinity===2&&!player.pub.heardRareFishAdvice)addPubChoice(pubTalkActions,"Ask about rare fish",askRareFish);addPubChoice(pubTalkActions,"Buy him a beer ($3)",buyOldTimerBeer);saveGame();}
+function bartenderSmallTalk(){const lines=['He just looks at you, unblinking.','"Are you ordering a beer?"','He washes a glass and doesn\'t react at all.'];pubMessage.textContent=randomChoice(lines);}
+function showBartenderTalk(){pubTalkActions.style.display="none";pubBartenderActions.innerHTML="";pubBartenderActions.style.display="block";addPubChoice(pubBartenderActions,"Make small talk",bartenderSmallTalk);addPubChoice(pubBartenderActions,"Order a drink ($3)",orderDrink);}
 
 function openJournal(){
   if(state!=="ready"&&state!=="finished")return;
@@ -341,7 +370,7 @@ function renderJournalEntry(fishId){
     '<div class="journalFishCopy"></div>'
   ].join("");
 }
-function describeNibbleBehavior(fish){const b=fish.nibbleBehavior;if(b.leaveChance===0)return "Eager. Unlikely to leave once interested.";if(b.biteChance<0.45)return "Cautious. Twitching can help, but overdoing it may spook the fish.";return "Moderately cautious. Additional nibbles improve your chances.";}
+function describeNibbleBehavior(fish){const b=fish.nibbleBehavior;if((b.baseBite??0)>=0.70&&(b.baseNervousness??0)<=0.05)return "Eager. Usually quick to commit once interested.";if((b.baseBite??0)<0.35||(b.baseNervousness??0)>=0.20)return "Cautious. Working the bait can help, but bad timing makes it more suspicious.";return "Moderately cautious. Additional nibbles improve your chances.";}
 
 const SKY_WIDTH=44;
 const SKY_HEIGHT=5;
@@ -402,20 +431,35 @@ function renderWeatherOverlay(grid){
   const raining=name==="Light Rain"||name==="Rain"||name==="Heavy Rain";
   const drift=(skyFrame%6)-2;
   const base=Math.max(1,Math.min(SKY_WIDTH-14,18+drift));
+  const phase=skyFrame%4;
+
+  if(name==="Heavy Rain"){
+    // A low, solid storm ceiling: the sun/moon disappears behind the cloud deck.
+    // Unlike the ordinary cloud, we see only the scalloped underside below a flat top.
+    for(let row=0;row<3;row++) grid[row].fill(" ");
+    grid[0].fill("_");
+    const undersides=[
+      "  \\____/   \\_______/  \\_____/   \\_______/  ",
+      "\\_____/  \\______/   \\_______/  \\_____/   ",
+      "   \\_______/   \\________/   \\_______/    "
+    ];
+    stampSky(grid,1,-2+(skyFrame%3),undersides[skyFrame%undersides.length]);
+    stampSky(grid,2,2-((skyFrame+1)%3),undersides[(skyFrame+1)%undersides.length]);
+    const rows=[" /  /  /  /  /  /  /  /  / ","/  /  /  /  /  /  /  /  /  /","  /  /  /  /  /  /  /  /  / "];
+    stampSky(grid,3,-1,rows[phase%3]);stampSky(grid,4,1,rows[(phase+1)%3]);
+    return;
+  }
+
   // Rainy clouds sit one row higher to leave room for visible falling precipitation.
   const cloudRow=raining?0:1;
   stampSky(grid,cloudRow,base,"   .--.");stampSky(grid,cloudRow+1,base-2,".-(    ).");stampSky(grid,cloudRow+2,base-3,"(_________)");
   if(!raining)return;
-  const phase=skyFrame%4;
   if(name==="Light Rain"){
     const sparse=[[[3,1],[4,8]],[[3,7],[4,13]],[[3,3],[4,10]],[[3,10],[4,5]]][phase];
     sparse.forEach(([row,off])=>stampSky(grid,row,base-3+off,"'"));
-  }else if(name==="Rain"){
+  }else{
     const rows=[" '   '  '   '","   '  '   '  '"," '   '   '   '"];
     stampSky(grid,3,base-4,rows[phase%3]);stampSky(grid,4,base-4,rows[(phase+1)%3]);
-  }else{
-    const rows=[" /  /  /  /  / ","/  /  /  /  /  /","  /  /  /  /  / "];
-    stampSky(grid,3,base-5,rows[phase%3]);stampSky(grid,4,base-5,rows[(phase+1)%3]);
   }
 }
 function renderSky(){const grid=blankSky();renderCelestial(grid);renderWeatherOverlay(grid);sky.textContent=grid.map(r=>r.join("").replace(/\s+$/,"" )).join("\n");}
@@ -440,7 +484,7 @@ function showIntroStep(step){
 }
 function finishIntro(){ world.introSeen=true; introOverlay.style.display="none"; addLog("world","Your father left you a broken old truck, an old rod and reel, a creel, and a locked box."); saveGame(); }
 
-fishButton.addEventListener("click",handleMainButton);pullUpButton.addEventListener("click",handleSecondaryFishingButton);sleepButton.addEventListener("click",()=>{world.period==="Night"?goToSleep():catchUpSleep();});quitJobButton.addEventListener("click",quitJob);journalButton.addEventListener("click",openJournal);journalReturnButton.addEventListener("click",closeJournal);marketButton.addEventListener("click",()=>goToLocation("market"));shopButton.addEventListener("click",()=>goToLocation("shop"));marketReturnButton.addEventListener("click",returnToFishing);shopReturnButton.addEventListener("click",returnToFishing);sellAllButton.addEventListener("click",sellAllFish);
+fishButton.addEventListener("click",handleMainButton);pullUpButton.addEventListener("click",handleSecondaryFishingButton);sleepButton.addEventListener("click",()=>{world.period==="Night"?goToSleep():catchUpSleep();});quitJobButton.addEventListener("click",quitJob);journalButton.addEventListener("click",openJournal);pubButton.addEventListener("click",openPub);pubReturnButton.addEventListener("click",closePub);pubTalkButton.addEventListener("click",()=>{if(pubTalkActions.style.display==="block")pubTalkActions.style.display="none";else showOldTimerTalk();});pubBartenderTalkButton.addEventListener("click",()=>{if(pubBartenderActions.style.display==="block")pubBartenderActions.style.display="none";else showBartenderTalk();});pubLeaveButton.addEventListener("click",closePub);journalReturnButton.addEventListener("click",closeJournal);marketButton.addEventListener("click",()=>goToLocation("market"));shopButton.addEventListener("click",()=>goToLocation("shop"));marketReturnButton.addEventListener("click",returnToFishing);shopReturnButton.addEventListener("click",returnToFishing);sellAllButton.addEventListener("click",sellAllFish);
 fightReelButton.addEventListener("pointerdown",e=>{if(state!=="reeling")return;e.preventDefault();isHoldingPressure=false;isReeling=true;fightReelButton.textContent="REELING... [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";});
 function stopReeling(){isReeling=false;if(fightReelButton)fightReelButton.textContent="HOLD TO REEL [↑]";}
 fightReelButton.addEventListener("pointerup",stopReeling);fightReelButton.addEventListener("pointercancel",stopReeling);fightReelButton.addEventListener("pointerleave",stopReeling);

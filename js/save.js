@@ -23,7 +23,7 @@ function loadMetaProgress(){
 }
 
 function saveGame(){
-  const saveData={version:10,world,player,gameLogEntries,logIdCounter,catchIdCounter};
+  const saveData={version:11,world,player,gameLogEntries,logIdCounter,catchIdCounter};
   localStorage.setItem(SAVE_KEY,JSON.stringify(saveData));
   saveMetaProgress();
 }
@@ -53,6 +53,8 @@ function loadGame(){
     if(!player.books) player.books=[];
     const legacyBookMap={beginner_freshwater:"freshwater_practical",practical_angler:"finding_freshwater",advanced_angling:"advanced_freshwater"};
     player.books=player.books.map(id=>legacyBookMap[id]||id).filter((id,i,a)=>a.indexOf(id)===i);
+    if(!player.pub || typeof player.pub!=="object") player.pub={};
+    player.pub=Object.assign({drinksTotal:0,drinksToday:0,oldTimerAffinity:0,pubLockedDay:null,pubVisits:0,oldTimerTalks:0,oldTimerBeersBought:0,fishMovedOnCount:0,lineBrokenDuringSurge:false,knowsArcticCharr:false,heardTwitchAdvice:false,heardStrongFishAdvice:false,heardRareFishAdvice:false,unacknowledgedTrophy:false,oldTimerTrophyReactions:0,oldTimerFriendly:false,oldTimerWarningUsed:false,pubDawnExit:false},player.pub);
     if(!player.job) player.job={employed:true};
     if(!player.meta) player.meta={obsession:0,hasAmulet:false,obsessionMilestones:[],allTimeBests:{},learnedTechniques:[]};
     if(!Array.isArray(player.meta.obsessionMilestones)) player.meta.obsessionMilestones=[];

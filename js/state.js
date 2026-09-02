@@ -41,7 +41,12 @@ const player = {
   fishKnowledge:{},
   job:{ employed:true },
   meta:{ obsession:0, hasAmulet:false, obsessionMilestones:[], allTimeBests:{}, learnedTechniques:[] },
-  condition:{ fatigue:0, nightsSkipped:0 }
+  condition:{ fatigue:0, nightsSkipped:0 },
+  pub:{
+    drinksTotal:0,drinksToday:0,oldTimerAffinity:0,pubLockedDay:null,pubVisits:0,oldTimerTalks:0,oldTimerBeersBought:0,
+    fishMovedOnCount:0,lineBrokenDuringSurge:false,knowsArcticCharr:false,heardTwitchAdvice:false,heardStrongFishAdvice:false,
+    heardRareFishAdvice:false,unacknowledgedTrophy:false,oldTimerTrophyReactions:0,oldTimerFriendly:false,oldTimerWarningUsed:false,pubDawnExit:false
+  }
 };
 
 const FISH_KNOWLEDGE_FIELDS = [
@@ -102,6 +107,9 @@ const NIBBLE_PAUSE_MAX = 1600;
 const TWITCH_BITE_WINDOW = 1200;
 
 let nibbleCount = 0;
+let successfulTwitches = 0;
+let twitchPrimed = false;
+let pendingNervousnessMultiplier = 1;
 let disturbance = 0;
 let lastNibbleAt = 0;
 let fishHasLeft = false;
@@ -125,3 +133,5 @@ let fightSwingTargetTimer = 0;
 let fightRecoveryLeft = false;
 let activeSpecialAbility = null;
 let forcedSurgeMultiplier = 1;
+let quickRecoveryUsed = false;
+let lastGaspUsed = false;

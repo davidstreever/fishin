@@ -19,3 +19,6 @@ Depth tackle progression update:
 - Adjustable Dual Diver targets any available depth (100% accuracy).
 - Random remains selectable after buying tackle.
 - Legacy Basic Tackle Kit saves migrate to the three basic depth tools.
+
+PUB ROADMAP
+- The Black Dog's environmental and NPC copy should expand as the game progresses, especially around Dad, fishing progression, obsession, and later supernatural events. V1 intentionally stays sparse.

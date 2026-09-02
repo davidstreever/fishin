@@ -124,19 +124,27 @@ const junkItems = [
 ];
 
 const specialAbilities = {
-  false_rest:{id:"false_rest",name:"False Rest",triggerChance:0.40,followupSurgeMultiplier:1.65,restDuration:1.30,restTarget:-0.21}
+  feint:{id:"feint",name:"Feint",triggerChance:0.40,followupSurgeMultiplier:1.65,restDuration:1.30,restTarget:-0.21},
+  last_gasp:{id:"last_gasp",name:"Last Gasp",threshold:0.25},
+  quick_recovery:{id:"quick_recovery",name:"Quick Recovery",threshold:0.45,recoveryFraction:0.25,chance:0.45},
+  quick_reaction:{id:"quick_reaction",name:"Quick Reaction",chance:0.98}
 };
 function fishDef(id,name,waterType,minWeight,maxWeight,trophyWeight,valuePerPound,fightPower,depthPreferences,rarity,baitPreferences,weatherPreferences,seasonPreferences,timePreferences,nibbleBehavior,hookWindow=1800,specialAbilityIds=[]){
   return {id,name,waterType,minWeight,maxWeight,trophyWeight,valuePerPound,fightPower,depthPreferences,rarity,baitPreferences,weatherPreferences,seasonPreferences,timePreferences,nibbleBehavior,hookWindow,specialAbilities:specialAbilityIds};
 }
 
-const veryEager={biteChance:0.82,biteGrowth:0.18,leaveChance:0.01,twitchBonus:0.08};
-const eager={biteChance:0.72,biteGrowth:0.18,leaveChance:0.02,twitchBonus:0.10};
-const normalNibble={biteChance:0.55,biteGrowth:0.15,leaveChance:0.08,twitchBonus:0.18};
-const reluctant={biteChance:0.30,biteGrowth:0.11,leaveChance:0.24,twitchBonus:0.36};
-const brookTroutNibble={biteChance:0.16,biteGrowth:0.08,leaveChance:0.34,twitchBonus:0.52};
-const cautious={biteChance:0.38,biteGrowth:0.12,leaveChance:0.15,twitchBonus:0.28};
-const veryCautious={biteChance:0.28,biteGrowth:0.10,leaveChance:0.20,twitchBonus:0.32};
+// Nibble behavior is built from interest and nervousness. Bite chance grows with
+// each nibble; raw nervousness grows separately, then rising bite commitment
+// suppresses the effective chance that the fish leaves. twitchResponse is one
+// species-level sensitivity value: 1.0 doubles the normal bite-growth reward
+// from a well-timed Twitch and halves raw nervousness on the next check.
+const veryEager={baseBite:0.82,biteGrowth:0.18,baseNervousness:0.02,nervousnessGrowth:0.02,twitchResponse:0.30};
+const eager={baseBite:0.72,biteGrowth:0.18,baseNervousness:0.03,nervousnessGrowth:0.03,twitchResponse:0.40};
+const normalNibble={baseBite:0.55,biteGrowth:0.15,baseNervousness:0.10,nervousnessGrowth:0.06,twitchResponse:0.60};
+const reluctant={baseBite:0.30,biteGrowth:0.11,baseNervousness:0.25,nervousnessGrowth:0.12,twitchResponse:0.90};
+const brookTroutNibble={baseBite:0.10,biteGrowth:0.10,baseNervousness:0.35,nervousnessGrowth:0.20,twitchResponse:1.00};
+const cautious={baseBite:0.38,biteGrowth:0.12,baseNervousness:0.15,nervousnessGrowth:0.08,twitchResponse:0.70};
+const veryCautious={baseBite:0.28,biteGrowth:0.10,baseNervousness:0.20,nervousnessGrowth:0.10,twitchResponse:0.80};
 
 const dayTimes={Dawn:1.20,"Early Morning":1.15,"Mid Morning":1.0,"Late Morning":0.95,Noon:0.85,"Early Afternoon":0.9,"Late Afternoon":1.0,"Early Evening":1.15,Twilight:1.25,Sunset:1.10,Midnight:0.8,"Deep Night":0.7};
 const nightTimes={Dawn:1.15,"Early Morning":0.8,"Mid Morning":0.75,"Late Morning":0.7,Noon:0.65,"Early Afternoon":0.7,"Late Afternoon":0.9,"Early Evening":1.05,Twilight:1.25,Sunset:1.25,Midnight:1.2,"Deep Night":1.3};
@@ -145,14 +153,14 @@ const offshoreTimes={Dawn:1.1,"Early Morning":1.0,"Mid Morning":1.0,"Late Mornin
 const fishTypes = [
   // Freshwater
   fishDef("pumpkinseed","Pumpkinseed","freshwater",0.15,1.25,1.05,2.20,0.55,{shallow:1.00,mid:0.20,deep:0.03},"common",{"Worm":1.8,"Minnow":0.5,"Insect":1.7,"Grub":1.4},["SUN","HOT"],["Spring","Summer"],dayTimes,veryEager,2200),
-  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.75,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950),
-  fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,2.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,normalNibble,1650,["false_rest"]),
-  fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,2.30,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,brookTroutNibble,1700),
+  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.75,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950,["quick_reaction"]),
+  fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,2.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,normalNibble,1650,["feint"]),
+  fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,2.30,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,brookTroutNibble,1700,["quick_recovery"]),
   fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,2.50,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,normalNibble,1600),
-  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,2.80,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,cautious,1600),
+  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,2.80,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,cautious,1600,["last_gasp"]),
   fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,1.10,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,eager,1850),
   fishDef("landlocked_salmon","Landlocked Salmon","freshwater",1.0,12.0,8.5,6.50,2.50,{shallow:0.10,mid:1.00,deep:0.65},"uncommon",{"Worm":0.7,"Minnow":1.9,"Insect":1.0,"Grub":0.8},["COLD","SHADE"],["Spring","Fall"],dayTimes,cautious,1500),
-  fishDef("lake_trout","Lake Trout / Togue","freshwater",1.5,25.0,16.0,6.75,2.50,{shallow:0.02,mid:0.25,deep:1.00},"uncommon",{"Worm":0.6,"Minnow":1.9,"Insect":0.6,"Grub":0.7},["COLD"],["Spring","Fall"],offshoreTimes,cautious,1450),
+  fishDef("lake_trout","Lake Trout","freshwater",1.5,25.0,16.0,6.75,2.50,{shallow:0.02,mid:0.25,deep:1.00},"uncommon",{"Worm":0.6,"Minnow":1.9,"Insect":0.6,"Grub":0.7},["COLD"],["Spring","Fall"],offshoreTimes,cautious,1450),
   fishDef("cusk_fresh","Cusk","freshwater",0.75,15.0,9.0,4.50,1.65,{shallow:0.02,mid:0.20,deep:1.00},"uncommon",{"Worm":1.2,"Minnow":1.6,"Insect":0.7,"Grub":1.0},["COLD","SHADE"],["Spring","Fall"],nightTimes,normalNibble,1700),
   fishDef("arctic_charr","Arctic Charr","freshwater",0.5,6.5,5.0,9.00,1.45,{shallow:0.01,mid:0.10,deep:1.00},"ultra_rare",{"Worm":0.9,"Minnow":1.6,"Insect":1.5,"Grub":1.2},["COLD"],["Spring","Fall"],offshoreTimes,eager,1450),
 
@@ -172,36 +180,37 @@ const fishTypes = [
 ];
 
 const fishFightProfiles = {
-  // initialSurgeChance controls the first run after the hook.
-  // surgeStaminaCost is the fraction of max stamina burned at the START of every surge.
-  // continueChance controls whether another surge is queued after the current one.
-  pumpkinseed:{staminaMultiplier:0.50,initialSurgeChance:0.30,surgeStaminaCost:0.70,continueChance:0.05},
-  yellow_perch:{staminaMultiplier:0.82,initialSurgeChance:0.95,surgeStaminaCost:0.55,continueChance:0.20},
-  chain_pickerel:{staminaMultiplier:0.82,initialSurgeChance:0.90,surgeStaminaCost:0.42,continueChance:0.30},
-  brook_trout:{staminaMultiplier:1.10,initialSurgeChance:0.90,surgeStaminaCost:0.34,continueChance:0.45},
-  smallmouth_bass:{staminaMultiplier:1.22,initialSurgeChance:0.95,surgeStaminaCost:0.30,continueChance:0.65},
-  largemouth_bass:{staminaMultiplier:1.32,initialSurgeChance:0.95,surgeStaminaCost:0.22,continueChance:0.70},
-  white_perch:{staminaMultiplier:0.78,initialSurgeChance:0.85,surgeStaminaCost:0.55,continueChance:0.15},
-  landlocked_salmon:{staminaMultiplier:1.55,initialSurgeChance:0.98,surgeStaminaCost:0.16,continueChance:0.78},
-  lake_trout:{staminaMultiplier:1.65,initialSurgeChance:0.90,surgeStaminaCost:0.20,continueChance:0.58},
-  cusk_fresh:{staminaMultiplier:1.30,initialSurgeChance:0.75,surgeStaminaCost:0.28,continueChance:0.35},
-  arctic_charr:{staminaMultiplier:1.05,initialSurgeChance:0.92,surgeStaminaCost:0.28,continueChance:0.55},
-  atlantic_mackerel:{staminaMultiplier:0.85,initialSurgeChance:0.90,surgeStaminaCost:0.38,continueChance:0.40},
-  winter_flounder:{staminaMultiplier:0.75,initialSurgeChance:0.55,surgeStaminaCost:0.60,continueChance:0.08},
-  striped_bass:{staminaMultiplier:1.40,initialSurgeChance:0.97,surgeStaminaCost:0.18,continueChance:0.72},
-  bluefish:{staminaMultiplier:1.25,initialSurgeChance:0.98,surgeStaminaCost:0.17,continueChance:0.78},
-  pollock:{staminaMultiplier:1.10,initialSurgeChance:0.90,surgeStaminaCost:0.25,continueChance:0.52},
-  atlantic_herring:{staminaMultiplier:0.60,initialSurgeChance:0.80,surgeStaminaCost:0.55,continueChance:0.12},
-  haddock:{staminaMultiplier:1.10,initialSurgeChance:0.85,surgeStaminaCost:0.28,continueChance:0.42},
-  atlantic_cod:{staminaMultiplier:1.25,initialSurgeChance:0.90,surgeStaminaCost:0.23,continueChance:0.55},
-  atlantic_wolffish:{staminaMultiplier:1.35,initialSurgeChance:0.92,surgeStaminaCost:0.20,continueChance:0.62},
-  cusk_salt:{staminaMultiplier:1.18,initialSurgeChance:0.82,surgeStaminaCost:0.27,continueChance:0.42},
-  atlantic_halibut:{staminaMultiplier:1.60,initialSurgeChance:0.95,surgeStaminaCost:0.16,continueChance:0.68},
-  bluefin_tuna:{staminaMultiplier:2.00,initialSurgeChance:0.99,surgeStaminaCost:0.10,continueChance:0.88}
+  // aggression is how often a fish chooses to fight. It is checked repeatedly.
+  // staminaMultiplier controls the size of the stamina pool. Remaining stamina
+  // limits how much of the fish's strength it can express.
+  // staminaDrain controls how quickly active fighting exhausts the fish.
+  pumpkinseed:{staminaMultiplier:0.50,aggression:0.10,staminaDrain:1.35},
+  yellow_perch:{staminaMultiplier:0.82,aggression:0.58,staminaDrain:1.10},
+  chain_pickerel:{staminaMultiplier:0.82,aggression:0.72,staminaDrain:0.95},
+  brook_trout:{staminaMultiplier:1.10,aggression:0.68,staminaDrain:0.90},
+  smallmouth_bass:{staminaMultiplier:1.22,aggression:0.88,staminaDrain:0.82},
+  largemouth_bass:{staminaMultiplier:1.32,aggression:0.72,staminaDrain:0.82},
+  white_perch:{staminaMultiplier:0.78,aggression:0.48,staminaDrain:1.10},
+  landlocked_salmon:{staminaMultiplier:1.55,aggression:0.82,staminaDrain:0.72},
+  lake_trout:{staminaMultiplier:1.65,aggression:0.38,staminaDrain:0.62},
+  cusk_fresh:{staminaMultiplier:1.30,aggression:0.34,staminaDrain:0.72},
+  arctic_charr:{staminaMultiplier:1.05,aggression:0.70,staminaDrain:0.88},
+  atlantic_mackerel:{staminaMultiplier:0.85,aggression:0.68,staminaDrain:1.00},
+  winter_flounder:{staminaMultiplier:0.75,aggression:0.18,staminaDrain:1.25},
+  striped_bass:{staminaMultiplier:1.40,aggression:0.80,staminaDrain:0.70},
+  bluefish:{staminaMultiplier:1.25,aggression:0.90,staminaDrain:0.76},
+  pollock:{staminaMultiplier:1.10,aggression:0.62,staminaDrain:0.88},
+  atlantic_herring:{staminaMultiplier:0.60,aggression:0.46,staminaDrain:1.20},
+  haddock:{staminaMultiplier:1.10,aggression:0.48,staminaDrain:0.92},
+  atlantic_cod:{staminaMultiplier:1.25,aggression:0.56,staminaDrain:0.82},
+  atlantic_wolffish:{staminaMultiplier:1.35,aggression:0.58,staminaDrain:0.78},
+  cusk_salt:{staminaMultiplier:1.18,aggression:0.42,staminaDrain:0.88},
+  atlantic_halibut:{staminaMultiplier:1.60,aggression:0.50,staminaDrain:0.58},
+  bluefin_tuna:{staminaMultiplier:2.00,aggression:0.94,staminaDrain:0.45}
 };
 
 for(const fish of fishTypes){
-  fish.fightProfile=fishFightProfiles[fish.id] || {staminaMultiplier:1,initialSurgeChance:0.85,surgeStaminaCost:0.30,continueChance:0.40};
+  fish.fightProfile=fishFightProfiles[fish.id] || {staminaMultiplier:1,aggression:0.55,staminaDrain:0.9};
 }
 
 const weatherDefinitions = {
