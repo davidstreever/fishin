@@ -430,7 +430,7 @@ function renderWeatherOverlay(grid){
   if(name==="Clear")return;
   // Overcast and proper rain obscure the celestial body. Partly Cloudy and
   // Light Rain keep it visible so the lighter weather states remain distinct.
-  if(name==="Cloudy"||name==="Rain") {
+  if(name==="Cloudy"||name==="Rain"||name==="Heavy Rain") {
     for(let row=0;row<grid.length;row++) grid[row].fill(" ");
   }
   const raining=name==="Light Rain"||name==="Rain"||name==="Heavy Rain";
