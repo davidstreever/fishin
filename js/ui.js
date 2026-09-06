@@ -179,10 +179,13 @@ function renderGearInventory(){
   addPicker("Tackle",[{id:"bobber",name:"Bobber"},...player.gear.ownedTackle.map(id=>tackleItems[id]).filter(Boolean)],activeTackleId(),id=>selectTackle(id));
   addPicker("Bait",Object.keys(player.gear.bait).filter(name=>player.gear.bait[name]>0).map(name=>({id:name,name:name+" ×"+player.gear.bait[name]})),player.selectedBait,id=>selectBait(id));
   gearInventory.appendChild(summary);
-  const paperRow=document.createElement("div");paperRow.className="inventoryEntry persistentGearRow";
-  const paperName=document.createElement("span");paperName.textContent="Newspaper";const paperDesc=document.createElement("span");paperDesc.innerHTML='Forecasts, local news, ads<div class="repairNote">'+getNewspaperGearState()+"</div>";const paperAction=document.createElement("span");
-  if(!player.newspaper.subscribed && player.meta.newspaperUnlocked){const sub=document.createElement("button");sub.className="textLink";sub.textContent="[Subscribe $8]";sub.title="You won't have to buy next season's paper at the shop.";sub.disabled=player.money<8;sub.addEventListener("click",subscribeNewspaper);paperAction.appendChild(sub);}
-  paperRow.append(paperName,paperDesc,paperAction);gearInventory.appendChild(paperRow);
+  const showNewspaperGear=player.newspaper.subscribed||player.newspaper.ownedIssues.length>0||(player.meta.hasAmulet&&player.meta.newspaperUnlocked);
+  if(showNewspaperGear){
+    const paperRow=document.createElement("div");paperRow.className="inventoryEntry persistentGearRow";
+    const paperName=document.createElement("span");paperName.textContent="Weymouth Wrap";const paperDesc=document.createElement("span");paperDesc.innerHTML='Forecasts, local news, ads<div class="repairNote">'+getNewspaperGearState()+"</div>";const paperAction=document.createElement("span");
+    if(!player.newspaper.subscribed && player.meta.newspaperUnlocked){const sub=document.createElement("button");sub.className="textLink";sub.textContent="[Subscribe $8]";sub.title="You won't have to buy next season's paper at the shop.";sub.disabled=player.money<8;sub.addEventListener("click",subscribeNewspaper);paperAction.appendChild(sub);}
+    paperRow.append(paperName,paperDesc,paperAction);gearInventory.appendChild(paperRow);
+  }
   const vehicle=vehicles[player.gear.vehicle]||vehicles.old_truck;const truckRow=document.createElement("div");truckRow.className="inventoryEntry persistentGearRow";const truckName=document.createElement("span");truckName.textContent=player.gear.vehicleRepaired?"Old Truck":"Broken Old Truck";const truckDesc=document.createElement("span");truckDesc.textContent=player.gear.vehicleRepaired?"Rusty, loud, and mostly running":"Rusty, loud and currently going nowhere";const truckAction=document.createElement("span");if(!player.gear.vehicleRepaired){const repair=document.createElement("button");repair.className="smallButton";repair.textContent="Repair $"+vehicle.repairCost;repair.disabled=player.money<vehicle.repairCost;repair.addEventListener("click",repairTruck);truckAction.appendChild(repair);}truckRow.append(truckName,truckDesc,truckAction);gearInventory.appendChild(truckRow);
   if(player.gear.boatReady){const boatRow=document.createElement("div");boatRow.className="inventoryEntry persistentGearRow";boatRow.innerHTML="<span>Old Boat</span><span>Kept at Old Pier.</span><span></span>";gearInventory.appendChild(boatRow);}
   if(player.gear.lockedBox){const boxRow=document.createElement("div");boxRow.className="inventoryEntry";boxRow.innerHTML="<span>Locked Box</span><span class='repairNote'>The lock won't budge.</span><span></span>";gearInventory.appendChild(boxRow);}
@@ -374,9 +377,10 @@ function renderJournalEntry(fishId){
 }
 function describeNibbleBehavior(fish){const b=fish.nibbleBehavior;if((b.baseBite??0)>=0.70&&(b.baseNervousness??0)<=0.05)return "Eager. Usually quick to commit once interested.";if((b.baseBite??0)<0.35||(b.baseNervousness??0)>=0.20)return "Cautious. Working the bait can help, but bad timing makes it more suspicious.";return "Moderately cautious. Additional nibbles improve your chances.";}
 
-const SKY_WIDTH=44;
 const SKY_HEIGHT=5;
 const waterFrames={1:["~~~~~~    ~~~~~~~    ~~~~~   ~~~~~~   ~~~~~~","~~~~~~    ~~~~~    ~~~~~~~~    ~~~~~~    ~~~","~~~~~~~       ~~~~        ~~~~       ~~~~~~~"],2:["~~~~~   ~~^~~   ~~~~~   ~~^~~  ~~~~   ~~^~~","~~^~~   ~~~~~    ~~^~~   ~~~~   ~~^~~   ~~~","~~~~   ~^~   ~~~~    ~^~    ~~~~   ~^~   ~~~"],3:["~~^ ~~~≈~~~  ~~≈^≈~~  ~~~≈^≈~~~  ~~~≈~~~ ^~~","~~~ ~~~~  ~~~~≈~~  ~~≈~~~  ~~~~  ~~^~~  ~~~~","  ~~≈~~~  ~~~~  ~~≈≈~~~~    ~~~~  ~~≈~~  ~≈~"],4:["≈≈≈~ ~≈^≈~~≈≈≈~~^~~≈≈~ ~≈^≈~~~~≈≈≈~~~~≈^≈~~~"," ~~~≈≈≈≈≈~≈^~~~~≈~~^≈≈≈~~≈≈^≈≈~~~~~≈≈^≈≈~^ ","≈≈≈≈≈≈~~~^ ~~≈≈≈≈≈≈~~^≈≈≈≈≈~~~^≈~~~~^≈≈≈~ ","~~≈~^ ~≈~~~~^~~≈≈≈~~~~≈~^ ~≈~~~~^≈≈≈~~≈≈^~"]};
+// Keep the ASCII sky tied to the widest authored water frame.
+const SKY_WIDTH=Math.max(...Object.values(waterFrames).flat().map(frame=>frame.length));
 let skyFrame=0,waterFrame=0,skyAnimationTimer=null,waterAnimationTimer=null;
 function blankSky(){return Array.from({length:SKY_HEIGHT},()=>Array(SKY_WIDTH).fill(" "));}
 function stampSky(grid,row,col,text){if(row<0||row>=SKY_HEIGHT)return;for(let i=0;i<text.length;i++){const x=col+i;if(x>=0&&x<SKY_WIDTH&&text[i]!==" ")grid[row][x]=text[i];}}
@@ -446,13 +450,19 @@ function renderWeatherOverlay(grid){
     // A low, solid storm ceiling: the sun/moon disappears behind the cloud deck.
     // Unlike the ordinary cloud, we see only the scalloped underside below a flat top.
     for(let row=0;row<3;row++) grid[row].fill(" ");
-    const undersides=[
-      "  \\____/   \\_______/  \\_____/   \\_______/   \\____/  ",
-      "\\_____/  \\______/   \\_______/  \\_____/   \\_______/  ",
-      "  \\_______/   \\________/   \\_______/   \\______/  "
+    const undersidePatterns=[
+      "\____/   \_______/   \_____/   \_______/   \____/",
+      "  \_____/  \______/   \_______/   \_____/  \_____/",
+      "\_______/   \_____/   \________/   \______/   \___/"
     ];
-    stampSky(grid,1,-2+(skyFrame%3),undersides[skyFrame%undersides.length]);
-    stampSky(grid,2,2-((skyFrame+1)%3),undersides[(skyFrame+1)%undersides.length]);
+    // Repeat/crop the storm underside to the actual sky width instead of
+    // assuming the old 44-column composition.
+    const stormLine=(pattern,offset=0)=>{
+      const repeated=(pattern+"   ").repeat(Math.ceil((SKY_WIDTH+8)/pattern.length)+1);
+      return repeated.slice(Math.max(0,offset),Math.max(0,offset)+SKY_WIDTH+2);
+    };
+    stampSky(grid,1,-1,stormLine(undersidePatterns[skyFrame%undersidePatterns.length],skyFrame%3));
+    stampSky(grid,2,-1,stormLine(undersidePatterns[(skyFrame+1)%undersidePatterns.length],(skyFrame+1)%3));
     const rows=["  /   /   /   /   /   /   /   /   / ","/   /   /   /   /   /   /   /   /   / "," /  /  /  /  /  /  /  /  /  /  /  /  /"];
     stampSky(grid,3,-1,rows[phase%3]);stampSky(grid,4,1,rows[(phase+1)%3]);
     return;
@@ -464,7 +474,17 @@ function renderWeatherOverlay(grid){
   const wide=name==="Cloudy"||name==="Rain";
   if(!wide){stampSky(grid,cloudRow,base,"   .--.");stampSky(grid,cloudRow+1,base-2,".-(    ).");stampSky(grid,cloudRow+2,base-3,"(_________)");}
   else {
-    const layouts=[[2,18,33],[0,15,31],[4,22],[1,17,34]];const cols=layouts[skyFrame%layouts.length];
+    // Anchor the outer clouds to the derived sky edges and let the middle
+    // cloud drift. This keeps Cloudy/Rain spanning the same width as the sea.
+    const right=Math.max(8,SKY_WIDTH-7);
+    const middle=Math.round(SKY_WIDTH/2)-3;
+    const layouts=[
+      [1,middle-2,right],
+      [0,middle+1,right-1],
+      [3,middle,right-2],
+      [1,middle+3,right]
+    ];
+    const cols=layouts[skyFrame%layouts.length];
     cols.forEach((c,i)=>{const top=i%2?"  .---.":"   .--.";const mid=i%2?".(     ).":".-(    ).";const low=i%2?"(________)":"(_________)";stampSky(grid,cloudRow,c,top);stampSky(grid,cloudRow+1,c-2,mid);stampSky(grid,cloudRow+2,c-3,low);});
   }
   if(!raining)return;
@@ -516,9 +536,9 @@ function getNewspaperGearState(){
   return player.newspaper.ownedIssues.length?"Old":"None";
 }
 function addOwnedIssue(issue){if(!issue||findOwnedIssue(issue.key))return false;player.newspaper.ownedIssues.push(JSON.parse(JSON.stringify(issue)));player.meta.newspaperUnlocked=true;return true;}
-function buyNewspaperIssue(issue){if(!issue||player.money<5||findOwnedIssue(issue.key))return;player.money-=5;addOwnedIssue(issue);addLog("buy","Bought the "+issue.season+", Year "+issue.year+" newspaper for $5.00.");renderShopInventory();renderGearInventory();updateDisplays();saveGame();}
-function subscribeNewspaper(){if(player.newspaper.subscribed||player.money<8||!player.meta.newspaperUnlocked)return;player.money-=8;player.newspaper.subscribed=true;addLog("buy","Subscribed to the newspaper for $8.00.");const issue=issueFromWeather(world.weatherSeason);addOwnedIssue(issue);renderGearInventory();renderShopInventory();updateDisplays();saveGame();}
-function deliverSubscribedNewspaper(){if(!player.newspaper?.subscribed)return;const issue=issueFromWeather(world.weatherSeason);if(addOwnedIssue(issue))addLog("world","The new "+world.season+" newspaper arrives.");}
+function buyNewspaperIssue(issue){if(!issue||player.money<5||findOwnedIssue(issue.key))return;player.money-=5;addOwnedIssue(issue);addLog("buy","Bought the "+issue.season+", Year "+issue.year+" Weymouth Wrap for $5.00.");renderShopInventory();renderGearInventory();updateDisplays();saveGame();}
+function subscribeNewspaper(){if(player.newspaper.subscribed||player.money<8||!player.meta.newspaperUnlocked)return;player.money-=8;player.newspaper.subscribed=true;addLog("buy","Subscribed to the Weymouth Wrap for $8.00.");const issue=issueFromWeather(world.weatherSeason);addOwnedIssue(issue);renderGearInventory();renderShopInventory();updateDisplays();saveGame();}
+function deliverSubscribedNewspaper(){if(!player.newspaper?.subscribed)return;const issue=issueFromWeather(world.weatherSeason);if(addOwnedIssue(issue))addLog("world","The new "+world.season+" Weymouth Wrap arrives.");}
 function availableNewspaperIssues(){
   if(player.newspaper.subscribed)return [];
   const issues=[];if(world.weatherSeason)issues.push(issueFromWeather(world.weatherSeason));
@@ -534,7 +554,7 @@ function updateNewspaperFishingLink(){if(!newspaperFishingLink)return;newspaperF
 function forecastSummary(day){const w=day?.parts?.Day||day?.parts?.Morning||{};const wind=String(w.wind||"Light").toLowerCase();let weather=String(w.name||"Clear").toLowerCase();let windText=wind==="calm"?"calm":wind==="light"?"light wind":wind+" winds";return {temp:(w.temperatureF??"—")+"°",text:weather+", "+windText};}
 function renderForecast(issue){newspaperContent.innerHTML="<strong>8-DAY FORECAST</strong>";const grid=document.createElement("div");grid.className="forecastGrid";for(const day of issue.forecast||[]){const f=forecastSummary(day),cell=document.createElement("div");cell.className="forecastDay";cell.innerHTML="<strong>Day "+day.day+"</strong><div>"+f.temp+"</div><div>"+f.text+"</div>";grid.appendChild(cell);}newspaperContent.appendChild(grid);}
 function renderOldIssues(){newspaperContent.innerHTML="<strong>OLD ISSUES</strong>";const list=document.createElement("div");list.className="oldIssueList";const old=player.newspaper.ownedIssues.filter(i=>i.key!==currentIssueKey()).slice().reverse();if(!old.length){list.innerHTML='<div class="empty">No old issues.</div>';}else for(const issue of old){const b=document.createElement("button");b.className="textLink";b.textContent=issue.season+", Year "+issue.year+" [Read]";b.addEventListener("click",()=>{newspaperEditionLabel.textContent=issue.season+", Year "+issue.year;renderForecast(issue);});list.appendChild(b);}newspaperContent.appendChild(list);}
-function openNewspaper(){const issue=currentIssue();if(!issue)return;pierPanel.style.display="none";topNav.style.display="none";marketPanel.style.display="none";shopPanel.style.display="none";journalPanel.style.display="none";pubPanel.style.display="none";newspaperPanel.style.display="block";locationTitle.textContent="Fishin': The Newspaper";newspaperEditionLabel.textContent=issue.season+", Year "+issue.year;newspaperContent.innerHTML="";}
+function openNewspaper(){const issue=currentIssue();if(!issue)return;pierPanel.style.display="none";topNav.style.display="none";marketPanel.style.display="none";shopPanel.style.display="none";journalPanel.style.display="none";pubPanel.style.display="none";newspaperPanel.style.display="block";locationTitle.textContent="Fishin': Weymouth Wrap";newspaperEditionLabel.textContent=issue.season+", Year "+issue.year;newspaperContent.innerHTML="";}
 function closeNewspaper(){newspaperPanel.style.display="none";returnToFishing();}
 
 newspaperReadButton.addEventListener("click",openNewspaper);newspaperReturnButton.addEventListener("click",closeNewspaper);forecastReadButton.addEventListener("click",()=>{const issue=currentIssue();if(issue)renderForecast(issue);});oldIssuesReadButton.addEventListener("click",renderOldIssues);
