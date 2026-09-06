@@ -445,11 +445,11 @@ function renderWeatherOverlay(grid){
     const undersides=[
       "  \\____/   \\_______/  \\_____/   \\_______/  ",
       "\\_____/  \\______/   \\_______/  \\_____/   ",
-      "   \\_______/   \\________/   \\_______/    "
+      "      \\_______/   \\________/   \\_______/  "
     ];
     stampSky(grid,1,-2+(skyFrame%3),undersides[skyFrame%undersides.length]);
     stampSky(grid,2,2-((skyFrame+1)%3),undersides[(skyFrame+1)%undersides.length]);
-    const rows=[" /  /  /  /  /  /  /  /  / ","/  /  /  /  /  /  /  /  /  /","  /  /  /  /  /  /  /  /  / "];
+    const rows=["  /   /   /   /   /   /   /   /   / ","/   /   /   /   /   /   /   /   /   / "," /  /  /  /  /  /  /  /  /  /  /  /  /"];
     stampSky(grid,3,-1,rows[phase%3]);stampSky(grid,4,1,rows[(phase+1)%3]);
     return;
   }
