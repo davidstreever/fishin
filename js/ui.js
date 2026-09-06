@@ -437,7 +437,6 @@ function renderWeatherOverlay(grid){
     // A low, solid storm ceiling: the sun/moon disappears behind the cloud deck.
     // Unlike the ordinary cloud, we see only the scalloped underside below a flat top.
     for(let row=0;row<3;row++) grid[row].fill(" ");
-    grid[0].fill("_");
     const undersides=[
       "  \\____/   \\_______/  \\_____/   \\_______/  ",
       "\\_____/  \\______/   \\_______/  \\_____/   ",
@@ -450,9 +449,16 @@ function renderWeatherOverlay(grid){
     return;
   }
 
-  // Rainy clouds sit one row higher to leave room for visible falling precipitation.
+  // Partly Cloudy / Light Rain use one cloud. Cloudy / Rain use a broader
+  // two-cloud deck so the visual progression is obvious even without the label.
   const cloudRow=raining?0:1;
   stampSky(grid,cloudRow,base,"   .--.");stampSky(grid,cloudRow+1,base-2,".-(    ).");stampSky(grid,cloudRow+2,base-3,"(_________)");
+  if(name==="Cloudy"||name==="Rain"){
+    const secondBase=Math.max(2,base-15);
+    stampSky(grid,cloudRow,secondBase,"  .---.");
+    stampSky(grid,cloudRow+1,secondBase-2,".(     ).");
+    stampSky(grid,cloudRow+2,secondBase-3,"(________)");
+  }
   if(!raining)return;
   if(name==="Light Rain"){
     const sparse=[[[3,1],[4,8]],[[3,7],[4,13]],[[3,3],[4,10]],[[3,10],[4,5]]][phase];
