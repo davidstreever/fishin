@@ -86,6 +86,7 @@ let debugInstantTravel = false;
 let debugFightMeters = false;
 let debugFishStats = false;
 let debugSpecifyFish = false;
+let debugWaterMotion = null;
 let debugForcedFishId = null;
 let debugWeightClass = 2;
 let debugLastFightCheck = "—";
