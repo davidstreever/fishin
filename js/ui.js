@@ -428,6 +428,11 @@ function renderCelestial(grid){
 function renderWeatherOverlay(grid){
   const name=world.weather?.name||"Clear";
   if(name==="Clear")return;
+  // Overcast and proper rain obscure the celestial body. Partly Cloudy and
+  // Light Rain keep it visible so the lighter weather states remain distinct.
+  if(name==="Cloudy"||name==="Rain") {
+    for(let row=0;row<grid.length;row++) grid[row].fill(" ");
+  }
   const raining=name==="Light Rain"||name==="Rain"||name==="Heavy Rain";
   const drift=(skyFrame%6)-2;
   const base=Math.max(1,Math.min(SKY_WIDTH-14,18+drift));
@@ -465,7 +470,10 @@ function renderWeatherOverlay(grid){
     sparse.forEach(([row,off])=>stampSky(grid,row,base-3+off,"'"));
   }else{
     const rows=[" '   '  '   '","   '  '   '  '"," '   '   '   '"];
+    // Rain falls beneath both clouds, rather than only beneath the primary one.
     stampSky(grid,3,base-4,rows[phase%3]);stampSky(grid,4,base-4,rows[(phase+1)%3]);
+    const secondBase=Math.max(2,base-15);
+    stampSky(grid,3,secondBase-3,rows[(phase+2)%3]);stampSky(grid,4,secondBase-3,rows[(phase+1)%3]);
   }
 }
 function renderSky(){const grid=blankSky();renderCelestial(grid);renderWeatherOverlay(grid);sky.textContent=grid.map(r=>r.join("").replace(/\s+$/,"" )).join("\n");}
