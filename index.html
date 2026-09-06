@@ -45,6 +45,14 @@
   </select>
 </div>
     <div class="debugSection">
+      <div>MOON PHASE</div>
+      <select id="debugMoonSelect">
+        <option value="">Auto</option>
+        <option value="0">New Moon</option><option value="1">Waxing Crescent</option><option value="2">First Quarter</option><option value="3">Waxing Gibbous</option>
+        <option value="4">Full Moon</option><option value="5">Waning Gibbous</option><option value="6">Last Quarter</option><option value="7">Waning Crescent</option>
+      </select>
+    </div>
+    <div class="debugSection">
       <div>SEASON</div>
       <select id="debugSeasonSelect">
         <option value="">Choose...</option>
@@ -81,7 +89,7 @@
       <div id="debugForcedSummary" class="debugForcedSummary"></div>
     </aside>
     <div id="fishingHeader" class="fishingHeader">
-      <span id="seasonDisplay">Spring</span> • Day <span id="dayDisplay">1</span> • Year <span id="yearDisplay">1</span> • <span id="timeDisplay">Dawn</span> • <span id="temperatureDisplay">—° MILD</span>
+      <span id="seasonDisplay">Spring</span> • Day <span id="dayDisplay">1</span> • <span id="weekdayDisplay">Monday</span> • Year <span id="yearDisplay">1</span> • <span id="timeDisplay">Dawn</span> • <span id="temperatureDisplay">—° MILD</span>
       <span class="headerMoney">$<span id="moneyDisplay">0.00</span></span>
     </div>
     <div id="status">
@@ -106,6 +114,7 @@
           <div id="hint"></div>
         </div>
       </div>
+      <div id="newspaperFishingLink" class="newspaperFishingLink" style="display:none">Newspaper <button id="newspaperReadButton" class="textLink">[Read]</button></div>
     </div>
 
     <div id="depthControls" class="depthControls"></div>
@@ -158,6 +167,13 @@
     </ul>
     <div id="pubMessage" class="pubMessage"></div>
     <div id="pubExitActions" class="pubExitActions" style="display:none"><button id="pubLeaveButton" class="textLink">[Leave]</button></div>
+  </div>
+
+  <div id="newspaperPanel" class="newspaperPanel" style="display:none">
+    <div class="panelHeader"><div class="locationInfo" id="newspaperEditionLabel"></div><button id="newspaperReturnButton">Return to Fishing</button></div>
+    <h2>NEWSPAPER</h2>
+    <div class="newspaperMenu"><span>News</span><button id="forecastReadButton" class="textLink">Forecast [Read]</button><span>Classifieds</span><button id="oldIssuesReadButton" class="textLink">Old Issues [Read]</button></div>
+    <div id="newspaperContent" class="newspaperContent"></div>
   </div>
 
   <div id="journalPanel">

@@ -1,6 +1,7 @@
 // Fishin' — world.js
 
-function isWeekend(){ return world.seasonDay>WORKDAYS_PER_SEASON; }
+function getWeekday(){ return WEEKDAYS[((world.weekdayIndex||0)%7+7)%7]; }
+function isWeekend(){ return [5,6].includes(((world.weekdayIndex||0)%7+7)%7); }
 function getPeriodLimit(){
   if(world.period==="Morning") return 4;
   if(world.period==="Day") return 7;
@@ -19,7 +20,7 @@ function getTimeLabel(){
 }
 
 function getCalendarLabel(){
-  return world.season+", Day "+world.seasonDay+", Year "+world.year+(isWeekend()?" — Weekend":"")+" — "+getTimeLabel();
+  return world.season+", Day "+world.seasonDay+", Year "+world.year+" — "+getWeekday()+" — "+getTimeLabel();
 }
 
 function isWorkDue(){ return player.job.employed && !isWeekend() && world.period==="Morning" && world.timeUnits>=getPeriodLimit(); }
@@ -173,10 +174,12 @@ function advanceDay(){
   player.pub.drinksToday=0;
   player.pub.pubLockedDay=null;
   if(player.pub.oldTimerAffinity===-2) player.pub.oldTimerAffinity=-1;
+  world.weekdayIndex=((world.weekdayIndex||0)+1)%7;
+  archiveCurrentNewspaperIssue();
   world.seasonDay++;
-  if(world.seasonDay>DAYS_PER_SEASON){ world.seasonDay=1; advanceSeason(); generateSeasonWeather(); }
+  if(world.seasonDay>DAYS_PER_SEASON){ world.seasonDay=1; advanceSeason(); activateNextSeasonWeather(); deliverSubscribedNewspaper(); }
   else applyWeatherForCurrentPeriod();
-  addLog("world",world.season+", Day "+world.seasonDay+", Year "+world.year+(isWeekend()?" — Weekend":"")+" begins.");
+  addLog("world",world.season+", Day "+world.seasonDay+", Year "+world.year+" — "+getWeekday()+" begins.");
   addLog("world",describeWeather());
 }
 
@@ -232,6 +235,6 @@ function goToLocation(location){
 
 function returnToFishing(){
   world.screen="fishing";
-  marketPanel.style.display="none"; shopPanel.style.display="none"; journalPanel.style.display="none"; if(typeof pubPanel!=="undefined"&&pubPanel)pubPanel.style.display="none"; pierPanel.style.display="block"; topNav.style.display="flex";
+  marketPanel.style.display="none"; shopPanel.style.display="none"; journalPanel.style.display="none"; if(typeof pubPanel!=="undefined"&&pubPanel)pubPanel.style.display="none"; if(typeof newspaperPanel!=="undefined"&&newspaperPanel)newspaperPanel.style.display="none"; pierPanel.style.display="block"; topNav.style.display="flex";
   refreshLocationUI(); resetFishing(); updateDisplays(); updateInventoryDisplay(); renderGearInventory(); startEnvironmentAnimations(); saveGame();
 }

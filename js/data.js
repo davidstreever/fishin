@@ -2,8 +2,8 @@
 
 const DAY_PERIOD_UNITS = 4;
 const NIGHT_UNITS = 7;
-const DAYS_PER_SEASON = 7;
-const WORKDAYS_PER_SEASON = 5;
+const DAYS_PER_SEASON = 8;
+const WEEKDAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const seasons = ["Spring", "Summer", "Fall"];
 
 const DEPTHS = ["shallow", "mid", "deep"];

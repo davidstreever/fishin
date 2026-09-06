@@ -8,7 +8,8 @@ function saveMetaProgress(){
     hasAmulet:!!player.meta?.hasAmulet,
     obsessionMilestones:[...(player.meta?.obsessionMilestones||[])],
     allTimeBests:{...(player.meta?.allTimeBests||{})},
-    learnedTechniques:[...(player.meta?.learnedTechniques||[])]
+    learnedTechniques:[...(player.meta?.learnedTechniques||[])],
+    newspaperUnlocked:!!player.meta?.newspaperUnlocked
   };
   localStorage.setItem(META_SAVE_KEY,JSON.stringify(meta));
 }
@@ -18,12 +19,12 @@ function loadMetaProgress(){
   if(!raw) return;
   try{
     const meta=JSON.parse(raw);
-    player.meta=Object.assign({obsession:0,hasAmulet:false,obsessionMilestones:[],allTimeBests:{},learnedTechniques:[]},player.meta||{},meta||{});
+    player.meta=Object.assign({obsession:0,hasAmulet:false,obsessionMilestones:[],allTimeBests:{},learnedTechniques:[],newspaperUnlocked:false},player.meta||{},meta||{});
   }catch(error){ console.error("Could not load Fishin' meta save:",error); }
 }
 
 function saveGame(){
-  const saveData={version:11,world,player,gameLogEntries,logIdCounter,catchIdCounter};
+  const saveData={version:12,world,player,gameLogEntries,logIdCounter,catchIdCounter};
   localStorage.setItem(SAVE_KEY,JSON.stringify(saveData));
   saveMetaProgress();
 }
@@ -56,10 +57,16 @@ function loadGame(){
     if(!player.pub || typeof player.pub!=="object") player.pub={};
     player.pub=Object.assign({drinksTotal:0,drinksToday:0,oldTimerAffinity:0,pubLockedDay:null,pubVisits:0,oldTimerTalks:0,oldTimerBeersBought:0,fishMovedOnCount:0,lineBrokenDuringSurge:false,knowsArcticCharr:false,heardTwitchAdvice:false,heardStrongFishAdvice:false,heardRareFishAdvice:false,unacknowledgedTrophy:false,oldTimerTrophyReactions:0,oldTimerFriendly:false,oldTimerWarningUsed:false,pubDawnExit:false},player.pub);
     if(!player.job) player.job={employed:true};
-    if(!player.meta) player.meta={obsession:0,hasAmulet:false,obsessionMilestones:[],allTimeBests:{},learnedTechniques:[]};
+    if(!player.meta) player.meta={obsession:0,hasAmulet:false,obsessionMilestones:[],allTimeBests:{},learnedTechniques:[],newspaperUnlocked:false};
     if(!Array.isArray(player.meta.obsessionMilestones)) player.meta.obsessionMilestones=[];
     if(!player.meta.allTimeBests || typeof player.meta.allTimeBests!=="object") player.meta.allTimeBests={};
     if(!Array.isArray(player.meta.learnedTechniques)) player.meta.learnedTechniques=[];
+    if(typeof player.meta.newspaperUnlocked!=="boolean") player.meta.newspaperUnlocked=false;
+    if(typeof world.weekdayIndex!=="number") world.weekdayIndex=((world.seasonsCompleted||0)*7+Math.max(0,(world.seasonDay||1)-1))%7;
+    if(!Array.isArray(world.newspaperHistory)) world.newspaperHistory=[];
+    if(!player.newspaper||typeof player.newspaper!=="object") player.newspaper={ownedIssues:[],subscribed:false};
+    if(!Array.isArray(player.newspaper.ownedIssues)) player.newspaper.ownedIssues=[];
+    if(typeof player.newspaper.subscribed!=="boolean") player.newspaper.subscribed=false;
     if(player.books.includes("playing_the_fish")&&!player.meta.learnedTechniques.includes("hold_pressure"))player.meta.learnedTechniques.push("hold_pressure");
     if((player.books.includes("advanced_freshwater")||player.books.includes("advanced_saltwater"))&&!player.meta.learnedTechniques.includes("twitch"))player.meta.learnedTechniques.push("twitch");
     if(!world.unlockedLocations) world.unlockedLocations=["fishing_hole","lazy_brook","big_lake","old_pier","coastal_waters","dads_island"];

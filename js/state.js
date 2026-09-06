@@ -5,6 +5,7 @@ const world = {
   seasonIndex:0,
   season:"Spring",
   seasonDay:1,
+  weekdayIndex:0,
   year:1,
   introSeen:false,
   period:"Morning",
@@ -13,6 +14,8 @@ const world = {
   seasonsCompleted:0,
   weather:null,
   weatherSeason:null,
+  nextSeasonWeather:null,
+  newspaperHistory:[],
   unlockedLocations:["fishing_hole","lazy_brook","big_lake","old_pier","coastal_waters","dads_island"]
 };
 
@@ -32,6 +35,7 @@ const player = {
     boatReady:false,
     truckCreels:0
   },
+  newspaper:{ownedIssues:[],subscribed:false},
   selectedBait:"Worm",
   selectedDepth:"random",
   inventory:[],
@@ -40,7 +44,7 @@ const player = {
   books:[],
   fishKnowledge:{},
   job:{ employed:true },
-  meta:{ obsession:0, hasAmulet:false, obsessionMilestones:[], allTimeBests:{}, learnedTechniques:[] },
+  meta:{ obsession:0, hasAmulet:false, obsessionMilestones:[], allTimeBests:{}, learnedTechniques:[], newspaperUnlocked:false },
   condition:{ fatigue:0, nightsSkipped:0 },
   pub:{
     drinksTotal:0,drinksToday:0,oldTimerAffinity:0,pubLockedDay:null,pubVisits:0,oldTimerTalks:0,oldTimerBeersBought:0,
@@ -87,6 +91,7 @@ let debugFightMeters = false;
 let debugFishStats = false;
 let debugSpecifyFish = false;
 let debugWaterMotion = null;
+let debugMoonPhase = null;
 let debugForcedFishId = null;
 let debugWeightClass = 2;
 let debugLastFightCheck = "—";

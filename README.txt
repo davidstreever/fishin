@@ -22,3 +22,5 @@ Depth tackle progression update:
 
 PUB ROADMAP
 - The Black Dog's environmental and NPC copy should expand as the game progresses, especially around Dad, fishing progression, obsession, and later supernatural events. V1 intentionally stays sparse.
+
+Update: 8-day seasons now run alongside a continuous 7-day weekday cycle; eight moon phases and a temporary moon debug override are included. Newspaper issues/forecast/archive/subscription are implemented. Pub/newspaper text links use #ff7777 with underline on hover. Cloudy and Rain now animate wider 2-3 cloud layouts; Heavy Rain spans the 44-character sky more fully.

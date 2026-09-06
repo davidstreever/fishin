@@ -1,5 +1,5 @@
 // Fishin' — weather.js
-// Weather is generated as a saved seven-day seasonal sequence. There is no forecast UI yet.
+// Weather is generated as a saved eight-day seasonal sequence. Newspaper forecasts read the same stored sequence.
 const WEATHER_DAYPARTS=["Morning","Day","Evening","Night"];
 const WEATHER_PATTERNS={
   stable:{stay:0.80,modest:0.19,major:0.01},
@@ -22,17 +22,17 @@ function makeWeatherState(name,tempF,windLevel,pattern){const tags=conditionToTa
 function initialCondition(season){const cfg=SEASON_WEATHER[season];const r=Math.random();if(r<cfg.rain)return Math.random()<0.25?"Rain":"Light Rain";if(r<cfg.rain+cfg.clear)return "Clear";return Math.random()<0.45?"Partly Cloudy":"Cloudy";}
 function nextCondition(prev,pattern){const probs=WEATHER_PATTERNS[pattern];const r=Math.random();let step=0;if(r<probs.stay)step=0;else if(r<probs.stay+probs.modest)step=Math.random()<0.5?-1:1;else step=Math.random()<0.5?-2:2;let i=CONDITION_ORDER.indexOf(prev);if(i<0)i=2;return CONDITION_ORDER[Math.max(0,Math.min(CONDITION_ORDER.length-1,i+step))];}
 function nextWind(prev,pattern,season){let level=prev;if(pattern==="front")level=Math.max(level,2)+weightedIndex([0.05,0.20,0.40,0.25,0.10]);else level+=weightedIndex([0.20,0.60,0.20])-1;level+=SEASON_WEATHER[season].windBias&&Math.random()<0.12?1:0;return Math.max(0,Math.min(4,level));}
-function generateSeasonWeather(){
-  const cfg=SEASON_WEATHER[world.season];let condition=initialCondition(world.season);let temp=Math.round((cfg.temp[0]+cfg.temp[1])/2);let wind=1;
+function buildSeasonWeather(season,year){
+  const cfg=SEASON_WEATHER[season];let condition=initialCondition(season);let temp=Math.round((cfg.temp[0]+cfg.temp[1])/2);let wind=1;
   const days=[];
   for(let d=1;d<=DAYS_PER_SEASON;d++){
-    const pattern=patternForSeason(world.season);const parts={};
+    const pattern=patternForSeason(season);const parts={};
     // Daily temperature tendency plus ordinary diurnal movement.
     const dailyBase=Math.max(cfg.temp[0],Math.min(cfg.temp[1],temp+randomNumber(-4,4)));
     for(let i=0;i<WEATHER_DAYPARTS.length;i++){
       const part=WEATHER_DAYPARTS[i];
       if(i>0)condition=nextCondition(condition,pattern);
-      wind=nextWind(wind,pattern,world.season);
+      wind=nextWind(wind,pattern,season);
       // Strong wind/fronts are allowed to make a larger extra shift.
       if(wind>=3 && pattern!=="stable" && Math.random()<(wind===4?0.22:0.12)) condition=nextCondition(nextCondition(condition,"front"),"front");
       const offset={Morning:-5,Day:5,Evening:1,Night:-7}[part];
@@ -41,10 +41,13 @@ function generateSeasonWeather(){
     }
     temp=dailyBase;days.push({day:d,pattern,parts});
   }
-  world.weatherSeason={season:world.season,year:world.year,days};
-  applyWeatherForCurrentPeriod();
+  return {season,year,days};
 }
-function ensureSeasonWeather(){if(!world.weatherSeason||world.weatherSeason.season!==world.season||world.weatherSeason.year!==world.year||!Array.isArray(world.weatherSeason.days))generateSeasonWeather();else applyWeatherForCurrentPeriod();}
+function generateSeasonWeather(){ world.weatherSeason=buildSeasonWeather(world.season,world.year); world.nextSeasonWeather=null; applyWeatherForCurrentPeriod(); }
+function getNextSeasonInfo(){const i=(world.seasonIndex+1)%seasons.length;return {season:seasons[i],year:(world.seasonIndex===seasons.length-1?world.year+1:world.year)};}
+function ensureNextSeasonWeather(){const n=getNextSeasonInfo();if(!world.nextSeasonWeather||world.nextSeasonWeather.season!==n.season||world.nextSeasonWeather.year!==n.year)world.nextSeasonWeather=buildSeasonWeather(n.season,n.year);return world.nextSeasonWeather;}
+function activateNextSeasonWeather(){if(world.nextSeasonWeather&&world.nextSeasonWeather.season===world.season&&world.nextSeasonWeather.year===world.year){world.weatherSeason=world.nextSeasonWeather;world.nextSeasonWeather=null;applyWeatherForCurrentPeriod();}else generateSeasonWeather();}
+function ensureSeasonWeather(){if(!world.weatherSeason||world.weatherSeason.season!==world.season||world.weatherSeason.year!==world.year||!Array.isArray(world.weatherSeason.days)||world.weatherSeason.days.length!==DAYS_PER_SEASON)generateSeasonWeather();else applyWeatherForCurrentPeriod();}
 function applyWeatherForCurrentPeriod(){const day=world.weatherSeason?.days?.[world.seasonDay-1];if(!day)return;const part=WEATHER_DAYPARTS.includes(world.period)?world.period:"Day";world.weather={...day.parts[part]};}
 // Compatibility with older world code/debug calls.
 function generateDailyWeather(){ensureSeasonWeather();applyWeatherForCurrentPeriod();}
