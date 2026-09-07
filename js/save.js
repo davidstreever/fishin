@@ -24,7 +24,7 @@ function loadMetaProgress(){
 }
 
 function saveGame(){
-  const saveData={version:12,world,player,gameLogEntries,logIdCounter,catchIdCounter};
+  const saveData={version:13,world,player,gameLogEntries,logIdCounter,catchIdCounter};
   localStorage.setItem(SAVE_KEY,JSON.stringify(saveData));
   saveMetaProgress();
 }
@@ -64,13 +64,22 @@ function loadGame(){
     if(typeof player.meta.newspaperUnlocked!=="boolean") player.meta.newspaperUnlocked=false;
     if(typeof world.weekdayIndex!=="number") world.weekdayIndex=((world.seasonsCompleted||0)*7+Math.max(0,(world.seasonDay||1)-1))%7;
     if(!Array.isArray(world.newspaperHistory)) world.newspaperHistory=[];
+    if(!world.storyFlags||typeof world.storyFlags!=="object") world.storyFlags={};
+    if(typeof world.storyFlags.islandUnlocked!=="boolean") world.storyFlags.islandUnlocked=false;
     if(!player.newspaper||typeof player.newspaper!=="object") player.newspaper={ownedIssues:[],subscribed:false};
     if(!Array.isArray(player.newspaper.ownedIssues)) player.newspaper.ownedIssues=[];
+    player.newspaper.ownedIssues=player.newspaper.ownedIssues.map(issue=>{
+      const fixed=(typeof NEWSPAPER_CONTENT!=="undefined"&&NEWSPAPER_CONTENT[issue.key])||{};
+      if(!Array.isArray(issue.news))issue.news=JSON.parse(JSON.stringify(fixed.news||[]));
+      if(!Array.isArray(issue.classifieds))issue.classifieds=JSON.parse(JSON.stringify(fixed.classifieds||[]));
+      if(!Array.isArray(issue.playerNews))issue.playerNews=[];
+      return issue;
+    });
     if(typeof player.newspaper.subscribed!=="boolean") player.newspaper.subscribed=false;
     if(player.books.includes("playing_the_fish")&&!player.meta.learnedTechniques.includes("hold_pressure"))player.meta.learnedTechniques.push("hold_pressure");
     if((player.books.includes("advanced_freshwater")||player.books.includes("advanced_saltwater"))&&!player.meta.learnedTechniques.includes("twitch"))player.meta.learnedTechniques.push("twitch");
     if(!world.unlockedLocations) world.unlockedLocations=["fishing_hole","lazy_brook","big_lake","old_pier","coastal_waters","dads_island"];
-    for(const id of Object.keys(locations)){ if(!world.unlockedLocations.includes(id)) world.unlockedLocations.push(id); }
+    for(const id of ["fishing_hole","lazy_brook","big_lake","old_pier","coastal_waters"]){ if(!world.unlockedLocations.includes(id)) world.unlockedLocations.push(id); }
     if(!world.location || !locations[world.location]) world.location="fishing_hole";
     if(typeof world.seasonsCompleted!=="number") world.seasonsCompleted=0;
     if(typeof world.year!=="number") world.year=1;

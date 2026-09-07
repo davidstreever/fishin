@@ -1,6 +1,6 @@
 // Fishin' — ui.js
 
-const locationTitle=document.getElementById("locationTitle"),topNav=document.getElementById("topNav"),locationTabs=document.getElementById("locationTabs"),locationDescription=document.getElementById("locationDescription"),depthControls=document.getElementById("depthControls");
+const locationTitle=document.getElementById("locationTitle"),topNav=document.getElementById("topNav"),locationTabs=document.getElementById("locationTabs"),utilityTabs=document.getElementById("utilityTabs"),locationDescription=document.getElementById("locationDescription"),depthControls=document.getElementById("depthControls");
 const pierPanel=document.getElementById("pierPanel"),marketPanel=document.getElementById("marketPanel"),shopPanel=document.getElementById("shopPanel"),journalPanel=document.getElementById("journalPanel"),pubPanel=document.getElementById("pubPanel"),newspaperPanel=document.getElementById("newspaperPanel");
 const seasonDisplay=document.getElementById("seasonDisplay"),dayDisplay=document.getElementById("dayDisplay"),weekdayDisplay=document.getElementById("weekdayDisplay"),yearDisplay=document.getElementById("yearDisplay"),timeDisplay=document.getElementById("timeDisplay");
 const introOverlay=document.getElementById("introOverlay"),introText=document.getElementById("introText"),introChoices=document.getElementById("introChoices");
@@ -14,7 +14,7 @@ const marketButton=document.getElementById("marketButton"),shopButton=document.g
 const marketMessage=document.getElementById("marketMessage"),shopMessage=document.getElementById("shopMessage"),marketInventory=document.getElementById("marketInventory"),sellAllButton=document.getElementById("sellAllButton"),shopInventory=document.getElementById("shopInventory");
 const gearInventory=document.getElementById("gearInventory"),creel=document.getElementById("creel"),gameLog=document.getElementById("gameLog"),journalSpecies=document.getElementById("journalSpecies"),journalEntry=document.getElementById("journalEntry"),journalWaterTabs=document.getElementById("journalWaterTabs"),inventoryCountDisplay=document.getElementById("inventoryCount"),inventoryLimitDisplay=document.getElementById("inventoryLimit"),totalWeightDisplay=document.getElementById("totalWeight"),totalValueDisplay=document.getElementById("totalValue");
 const debugResetButton=document.getElementById("debugResetButton"),debugAddBaitButton=document.getElementById("debugAddBaitButton"),debugAddMoneyButton=document.getElementById("debugAddMoneyButton"),debugTravelToggle=document.getElementById("debugTravelToggle"),debugFightMetersToggle=document.getElementById("debugFightMetersToggle"),debugFishStatsToggle=document.getElementById("debugFishStatsToggle"),debugSpecifyFishToggle=document.getElementById("debugSpecifyFishToggle"),debugWeatherSelect=document.getElementById("debugWeatherSelect"),debugWaterSelect=document.getElementById("debugWaterSelect"),debugMoonSelect=document.getElementById("debugMoonSelect"),debugSeasonSelect=document.getElementById("debugSeasonSelect");
-const newspaperFishingLink=document.getElementById("newspaperFishingLink"),newspaperReadButton=document.getElementById("newspaperReadButton"),newspaperReturnButton=document.getElementById("newspaperReturnButton"),newspaperEditionLabel=document.getElementById("newspaperEditionLabel"),forecastReadButton=document.getElementById("forecastReadButton"),oldIssuesReadButton=document.getElementById("oldIssuesReadButton"),newspaperContent=document.getElementById("newspaperContent");
+const newspaperFishingLink=document.getElementById("newspaperFishingLink"),newspaperReturnButton=document.getElementById("newspaperReturnButton"),newspaperEditionLabel=document.getElementById("newspaperEditionLabel"),forecastReadButton=document.getElementById("forecastReadButton"),newspaperIssueSelect=document.getElementById("newspaperIssueSelect"),previousIssueButton=document.getElementById("previousIssueButton"),nextIssueButton=document.getElementById("nextIssueButton"),newspaperContent=document.getElementById("newspaperContent");
 const debugFishPanel=document.getElementById("debugFishPanel"),debugFishLocation=document.getElementById("debugFishLocation"),debugFishList=document.getElementById("debugFishList"),debugWeightSlider=document.getElementById("debugWeightSlider"),debugWeightLabel=document.getElementById("debugWeightLabel"),debugForcedSummary=document.getElementById("debugForcedSummary");
 
 
@@ -129,14 +129,29 @@ function selectDepth(depth){
 
 function renderLocationTabs(){
   locationTabs.innerHTML="";
+  const atSea=["coastal_waters","dads_island"].includes(world.location);
+  const atPier=world.location==="old_pier";
+  if(utilityTabs)utilityTabs.style.display=atSea?"none":"flex";
+
   for(const loc of Object.values(locations)){
+    const seaDestination=["coastal_waters","dads_island"].includes(loc.id);
+    if(loc.id==="dads_island"&&!world.storyFlags?.islandUnlocked)continue;
+
+    // Sea destinations live behind the Old Pier. While out at sea, only boat
+    // destinations and the Old Pier are shown; the pier is the route home.
+    if(atSea){
+      if(loc.id!=="old_pier"&&!seaDestination)continue;
+    }else if(!atPier&&seaDestination){
+      continue;
+    }
+
     const b=document.createElement("button");b.className="locationTab"+(world.location===loc.id?" active":"");
     const atlasLocation=["lazy_brook","big_lake","coastal_waters"].includes(loc.id);const atlasKnown=!atlasLocation||hasBook("maine_fishing_atlas");
     b.textContent=atlasKnown?loc.name.replace(/^The /,""):"???";
     if(!debugInstantTravel){
       if(!atlasKnown){b.disabled=true;b.classList.add("locked");b.title="You don't know where this is yet.";}
       const unlocked=world.unlockedLocations.includes(loc.id);
-      const storyLocked=!!loc.storyLocked;
+      const storyLocked=loc.id==="dads_island"&&!world.storyFlags?.islandUnlocked;
       const truckLocked=loc.requiresTruck&&!player.gear.vehicleRepaired;
       const boatLocked=loc.requiresBoat&&!player.gear.boatReady;
       if(!unlocked){b.disabled=true;b.classList.add("locked");}
@@ -543,7 +558,10 @@ function issueKey(season,year){return season+":"+year;}
 function currentIssueKey(){return issueKey(world.season,world.year);}
 function findOwnedIssue(key){return player.newspaper.ownedIssues.find(i=>i.key===key);}
 function currentIssue(){return findOwnedIssue(currentIssueKey());}
-function issueFromWeather(weather){return {key:issueKey(weather.season,weather.year),season:weather.season,year:weather.year,forecast:JSON.parse(JSON.stringify(weather.days||[]))};}
+function issueFromWeather(weather){
+  const key=issueKey(weather.season,weather.year),fixed=NEWSPAPER_CONTENT[key]||{};
+  return {key,season:weather.season,year:weather.year,forecast:JSON.parse(JSON.stringify(weather.days||[])),news:JSON.parse(JSON.stringify(fixed.news||[])),playerNews:[],classifieds:JSON.parse(JSON.stringify(fixed.classifieds||[]))};
+}
 function archiveCurrentNewspaperIssue(){
   if(world.seasonDay!==DAYS_PER_SEASON||!world.weatherSeason)return;
   const issue=issueFromWeather(world.weatherSeason);if(!world.newspaperHistory.some(i=>i.key===issue.key))world.newspaperHistory.push(issue);
@@ -597,12 +615,20 @@ function renderOldNewspaperShopRow(box){
 }
 function updateNewspaperFishingLink(){if(!newspaperFishingLink)return;newspaperFishingLink.style.display=currentIssue()&&pierPanel.style.display!=="none"?"block":"none";}
 function forecastSummary(day){const w=day?.parts?.Day||day?.parts?.Morning||{};const wind=String(w.wind||"Light").toLowerCase();let weather=String(w.name||"Clear").toLowerCase();let windText=wind==="calm"?"calm":wind==="light"?"light wind":wind+" winds";return {temp:(w.temperatureF??"—")+"°",text:weather+", "+windText};}
-function renderForecast(issue){newspaperContent.innerHTML="<strong>8-DAY FORECAST</strong>";const grid=document.createElement("div");grid.className="forecastGrid";for(const day of issue.forecast||[]){const f=forecastSummary(day),cell=document.createElement("div");cell.className="forecastDay";cell.innerHTML="<strong>Day "+day.day+"</strong><div>"+f.temp+"</div><div>"+f.text+"</div>";grid.appendChild(cell);}newspaperContent.appendChild(grid);}
-function renderOldIssues(){newspaperContent.innerHTML="<strong>OLD ISSUES</strong>";const list=document.createElement("div");list.className="oldIssueList";const old=player.newspaper.ownedIssues.filter(i=>i.key!==currentIssueKey()).slice().reverse();if(!old.length){list.innerHTML='<div class="empty">No old issues.</div>';}else for(const issue of old){const b=document.createElement("button");b.className="textLink";b.textContent=issue.season+", Year "+issue.year+" [Read]";b.addEventListener("click",()=>{newspaperEditionLabel.textContent=issue.season+", Year "+issue.year;renderForecast(issue);});list.appendChild(b);}newspaperContent.appendChild(list);}
-function openNewspaper(){const issue=currentIssue();if(!issue)return;pierPanel.style.display="none";topNav.style.display="none";marketPanel.style.display="none";shopPanel.style.display="none";journalPanel.style.display="none";pubPanel.style.display="none";newspaperPanel.style.display="block";locationTitle.textContent="Fishin': Weymouth Wrap";newspaperEditionLabel.textContent=issue.season+", Year "+issue.year;newspaperContent.innerHTML="";}
+function forecastMoonGlyph(day){const glyphs=["●","◔","◑","◕","○","◕","◑","◔"];return glyphs[(Math.max(1,day)-1)%8];}
+function renderForecast(issue){newspaperContent.innerHTML="<strong>8-DAY FORECAST</strong>";const grid=document.createElement("div");grid.className="forecastGrid";for(const day of issue.forecast||[]){const f=forecastSummary(day),cell=document.createElement("div");cell.className="forecastDay";cell.innerHTML='<span class="forecastMoon" title="Moon phase">'+forecastMoonGlyph(day.day)+'</span><strong>Day '+day.day+'</strong><div>'+f.temp+'</div><div>'+f.text+'</div>';grid.appendChild(cell);}newspaperContent.appendChild(grid);}
+let displayedNewspaperIssueKey=null;
+function ownedIssuesChronological(){return player.newspaper.ownedIssues.slice().sort((a,b)=>a.year-b.year||seasons.indexOf(a.season)-seasons.indexOf(b.season));}
+function displayedNewspaperIssue(){return findOwnedIssue(displayedNewspaperIssueKey)||currentIssue()||ownedIssuesChronological().at(-1)||null;}
+function showNewspaperEdition(issue){
+  if(!issue)return;displayedNewspaperIssueKey=issue.key;newspaperEditionLabel.textContent=issue.season+", Year "+issue.year+" Edition";newspaperContent.innerHTML="";
+  const issues=ownedIssuesChronological();newspaperIssueSelect.innerHTML="";issues.slice().reverse().forEach(i=>{const o=document.createElement("option");o.value=i.key;o.textContent=i.season+", Year "+i.year;o.selected=i.key===issue.key;newspaperIssueSelect.appendChild(o);});
+  const index=issues.findIndex(i=>i.key===issue.key);previousIssueButton.disabled=index<=0;nextIssueButton.disabled=index<0||index>=issues.length-1;
+}
+function openNewspaper(){const issue=currentIssue();if(!issue)return;pierPanel.style.display="none";topNav.style.display="none";marketPanel.style.display="none";shopPanel.style.display="none";journalPanel.style.display="none";pubPanel.style.display="none";newspaperPanel.style.display="block";locationTitle.textContent="Fishin': Weymouth Wrap";showNewspaperEdition(issue);}
 function closeNewspaper(){newspaperPanel.style.display="none";returnToFishing();}
-
-newspaperReadButton.addEventListener("click",openNewspaper);newspaperReturnButton.addEventListener("click",closeNewspaper);forecastReadButton.addEventListener("click",()=>{const issue=currentIssue();if(issue)renderForecast(issue);});oldIssuesReadButton.addEventListener("click",renderOldIssues);
+function stepNewspaperIssue(direction){const issues=ownedIssuesChronological(),issue=displayedNewspaperIssue(),index=issues.findIndex(i=>i.key===issue?.key),next=issues[index+direction];if(next)showNewspaperEdition(next);}
+newspaperFishingLink.addEventListener("click",openNewspaper);newspaperReturnButton.addEventListener("click",closeNewspaper);forecastReadButton.addEventListener("click",()=>{const issue=displayedNewspaperIssue();if(issue)renderForecast(issue);});newspaperIssueSelect.addEventListener("change",()=>showNewspaperEdition(findOwnedIssue(newspaperIssueSelect.value)));previousIssueButton.addEventListener("click",()=>stepNewspaperIssue(-1));nextIssueButton.addEventListener("click",()=>stepNewspaperIssue(1));
 fishButton.addEventListener("click",handleMainButton);pullUpButton.addEventListener("click",handleSecondaryFishingButton);sleepButton.addEventListener("click",()=>{world.period==="Night"?goToSleep():catchUpSleep();});quitJobButton.addEventListener("click",quitJob);journalButton.addEventListener("click",openJournal);pubButton.addEventListener("click",openPub);pubReturnButton.addEventListener("click",closePub);pubTalkButton.addEventListener("click",()=>{if(pubTalkActions.style.display==="block")pubTalkActions.style.display="none";else showOldTimerTalk();});pubBartenderTalkButton.addEventListener("click",()=>{if(pubBartenderActions.style.display==="block")pubBartenderActions.style.display="none";else showBartenderTalk();});pubLeaveButton.addEventListener("click",closePub);journalReturnButton.addEventListener("click",closeJournal);marketButton.addEventListener("click",()=>goToLocation("market"));shopButton.addEventListener("click",()=>goToLocation("shop"));marketReturnButton.addEventListener("click",returnToFishing);shopReturnButton.addEventListener("click",returnToFishing);sellAllButton.addEventListener("click",sellAllFish);
 fightReelButton.addEventListener("pointerdown",e=>{if(state!=="reeling")return;e.preventDefault();isHoldingPressure=false;isReeling=true;fightReelButton.textContent="REELING... [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";});
 function stopReeling(){isReeling=false;if(fightReelButton)fightReelButton.textContent="HOLD TO REEL [↑]";}

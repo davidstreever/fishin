@@ -16,6 +16,7 @@ const world = {
   weatherSeason:null,
   nextSeasonWeather:null,
   newspaperHistory:[],
+  storyFlags:{islandUnlocked:false},
   unlockedLocations:["fishing_hole","lazy_brook","big_lake","old_pier","coastal_waters","dads_island"]
 };
 

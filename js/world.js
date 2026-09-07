@@ -202,12 +202,16 @@ function goToFishingLocation(locationId){
 
   if(!debugInstantTravel){
     if(!world.unlockedLocations.includes(locationId)) return;
-    if(loc.storyLocked){ message.textContent="You haven't found this place yet."; hint.textContent=""; return; }
+    if(locationId==="dads_island"&&!world.storyFlags?.islandUnlocked){ message.textContent="You haven't found this place yet."; hint.textContent=""; return; }
+    const atSea=["coastal_waters","dads_island"].includes(world.location);
+    const goingToSea=["coastal_waters","dads_island"].includes(locationId);
+    if(goingToSea&&world.location!=="old_pier"){ message.textContent="You have to leave from the Old Pier."; hint.textContent=""; return; }
+    if(atSea&&locationId!=="old_pier"){ message.textContent="You have to return to the Old Pier first."; hint.textContent=""; return; }
     if(loc.requiresTruck && !player.gear.vehicleRepaired){ message.textContent="Fix your truck first."; hint.textContent=""; return; }
     if(loc.requiresBoat && !player.gear.boatReady){ message.textContent="You need a boat."; hint.textContent=""; return; }
   }
 
-  addLog("world",(debugInstantTravel?"DEBUG: Travel to ":"You drive to ")+loc.name+".");
+  addLog("world",(debugInstantTravel?"DEBUG: Travel to ":loc.requiresBoat?"You take the boat to ":"You drive to ")+loc.name+".");
   world.location=locationId;
   if(!debugInstantTravel && world.period!=="Night") consumePeriodForTravel();
   resetFishing(); refreshLocationUI(); updateDisplays(); startEnvironmentAnimations(); saveGame();

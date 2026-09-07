@@ -10,6 +10,12 @@ const DEPTHS = ["shallow", "mid", "deep"];
 const DEPTH_LABELS = { shallow:"Shallow", mid:"Mid", deep:"Deep" };
 const TARGET_DEPTH_ACCURACY = { surface_float:0.95, split_shot_kit:0.85, egg_sinker:0.95, adjustable_dual_diver:1.00 };
 
+// Fixed newspaper content belongs in game data. Run-specific headlines/forecast snapshots live in the save.
+// Add authored edition content here as it is written.
+const NEWSPAPER_CONTENT = {
+  // "Spring:1": { news:[], classifieds:[] }
+};
+
 const locations = {
   fishing_hole: {
     id:"fishing_hole", name:"The Fishing Hole", waterType:"freshwater",
