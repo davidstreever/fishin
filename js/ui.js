@@ -214,6 +214,7 @@ function renderShopInventory(){
   const rodTitle=document.createElement("div");rodTitle.className="shopSectionTitle";rodTitle.textContent="RODS";box.appendChild(rodTitle);Object.values(rods).forEach(r=>box.appendChild(makeGearShopRow("rod",r)));
   const reelTitle=document.createElement("div");reelTitle.className="shopSectionTitle";reelTitle.textContent="REELS";box.appendChild(reelTitle);Object.values(reels).forEach(r=>box.appendChild(makeGearShopRow("reel",r)));
   renderNewspaperShopRows(box);
+  renderOldNewspaperShopRow(box);
   if(player.gear.vehicleRepaired){const storageTitle=document.createElement("div");storageTitle.className="shopSectionTitle";storageTitle.textContent="CREELS";box.appendChild(storageTitle);const count=player.gear.truckCreels||0;const costs=[15,25,40,60];const row=document.createElement("div");row.className="shopRow";const label=document.createElement("span");label.innerHTML="Truck Creel <span class=\"shopHave\">(Have: "+count+" / 4)</span><div class=\"shopNote\">Adds room for 10 more fish in the truck.</div>";const price=document.createElement("span");price.textContent=count<4?"$"+costs[count].toFixed(2):"";const b=document.createElement("button");b.className="smallButton";b.textContent=count<4?"Buy":"Full";b.disabled=count>=4||player.money<costs[count];b.addEventListener("click",buyTruckCreel);row.append(label,price,b);box.appendChild(row);}
   const bookTitle=document.createElement("div");bookTitle.className="shopSectionTitle";bookTitle.textContent="BOOKS";box.appendChild(bookTitle);Object.values(books).forEach(book=>box.appendChild(makeBookShopRow(book)));
   shopInventory.appendChild(box);
@@ -379,11 +380,25 @@ function describeNibbleBehavior(fish){const b=fish.nibbleBehavior;if((b.baseBite
 
 const SKY_HEIGHT=5;
 const waterFrames={1:["~~~~~~    ~~~~~~~    ~~~~~   ~~~~~~   ~~~~~~","~~~~~~    ~~~~~    ~~~~~~~~    ~~~~~~    ~~~","~~~~~~~       ~~~~        ~~~~       ~~~~~~~"],2:["~~~~~   ~~^~~   ~~~~~   ~~^~~  ~~~~   ~~^~~","~~^~~   ~~~~~    ~~^~~   ~~~~   ~~^~~   ~~~","~~~~   ~^~   ~~~~    ~^~    ~~~~   ~^~   ~~~"],3:["~~^ ~~~≈~~~  ~~≈^≈~~  ~~~≈^≈~~~  ~~~≈~~~ ^~~","~~~ ~~~~  ~~~~≈~~  ~~≈~~~  ~~~~  ~~^~~  ~~~~","  ~~≈~~~  ~~~~  ~~≈≈~~~~    ~~~~  ~~≈~~  ~≈~"],4:["≈≈≈~ ~≈^≈~~≈≈≈~~^~~≈≈~ ~≈^≈~~~~≈≈≈~~~~≈^≈~~~"," ~~~≈≈≈≈≈~≈^~~~~≈~~^≈≈≈~~≈≈^≈≈~~~~~≈≈^≈≈~^ ","≈≈≈≈≈≈~~~^ ~~≈≈≈≈≈≈~~^≈≈≈≈≈~~~^≈~~~~^≈≈≈~ ","~~≈~^ ~≈~~~~^~~≈≈≈~~~~≈~^ ~≈~~~~^≈≈≈~~≈≈^~"]};
-// Keep the ASCII sky tied to the widest authored water frame.
-const SKY_WIDTH=Math.max(...Object.values(waterFrames).flat().map(frame=>frame.length));
+// Keep the ASCII sky tied to the *rendered* width of the authored water frames.
+// Water uses a larger font than the sky, so equal character counts do not occupy
+// equal physical widths. Measure both using their actual computed fonts.
+let textMeasureCanvas=null;
+function measuredTextWidth(text,element){
+  if(!textMeasureCanvas)textMeasureCanvas=document.createElement("canvas");
+  const ctx=textMeasureCanvas.getContext("2d"),style=getComputedStyle(element);
+  ctx.font=[style.fontStyle,style.fontVariant,style.fontWeight,style.fontSize,style.fontFamily].filter(Boolean).join(" ");
+  return ctx.measureText(text).width;
+}
+function getSkyWidth(){
+  const frames=Object.values(waterFrames).flat();
+  const waterPixels=Math.max(...frames.map(frame=>measuredTextWidth(frame,water)));
+  const skyCharPixels=measuredTextWidth("M",sky)||1;
+  return Math.max(44,Math.ceil(waterPixels/skyCharPixels));
+}
 let skyFrame=0,waterFrame=0,skyAnimationTimer=null,waterAnimationTimer=null;
-function blankSky(){return Array.from({length:SKY_HEIGHT},()=>Array(SKY_WIDTH).fill(" "));}
-function stampSky(grid,row,col,text){if(row<0||row>=SKY_HEIGHT)return;for(let i=0;i<text.length;i++){const x=col+i;if(x>=0&&x<SKY_WIDTH&&text[i]!==" ")grid[row][x]=text[i];}}
+function blankSky(){const width=getSkyWidth();return Array.from({length:SKY_HEIGHT},()=>Array(width).fill(" "));}
+function stampSky(grid,row,col,text){if(row<0||row>=SKY_HEIGHT)return;const width=grid[row].length;for(let i=0;i<text.length;i++){const x=col+i;if(x>=0&&x<width&&text[i]!==" ")grid[row][x]=text[i];}}
 function getCelestialPosition(){
   const u=world.timeUnits;
   if(world.period==="Morning"){
@@ -442,29 +457,31 @@ function renderWeatherOverlay(grid){
     for(let row=0;row<grid.length;row++) grid[row].fill(" ");
   }
   const raining=name==="Light Rain"||name==="Rain"||name==="Heavy Rain";
+  const skyWidth=grid[0].length;
   const drift=(skyFrame%6)-2;
-  const base=Math.max(1,Math.min(SKY_WIDTH-14,18+drift));
+  const base=Math.max(1,Math.min(skyWidth-14,18+drift));
   const phase=skyFrame%4;
 
   if(name==="Heavy Rain"){
-    // A low, solid storm ceiling: the sun/moon disappears behind the cloud deck.
-    // Unlike the ordinary cloud, we see only the scalloped underside below a flat top.
+    // A low storm ceiling. We only see the overlapping scalloped underside;
+    // the top of the cloud deck is beyond the frame.
     for(let row=0;row<3;row++) grid[row].fill(" ");
     const undersidePatterns=[
-      "\____/   \_______/   \_____/   \_______/   \____/",
-      "  \_____/  \______/   \_______/   \_____/  \_____/",
-      "\_______/   \_____/   \________/   \______/   \___/"
+      "\\____/   \\_______/   \\_____/   \\_______/   \\____/",
+      "  \\_____/  \\______/   \\_______/   \\_____/  \\_____/",
+      "\\_______/   \\_____/   \\________/   \\______/   \\___/"
     ];
-    // Repeat/crop the storm underside to the actual sky width instead of
-    // assuming the old 44-column composition.
-    const stormLine=(pattern,offset=0)=>{
-      const repeated=(pattern+"   ").repeat(Math.ceil((SKY_WIDTH+8)/pattern.length)+1);
-      return repeated.slice(Math.max(0,offset),Math.max(0,offset)+SKY_WIDTH+2);
+    const fillPattern=(pattern,offset=0)=>{
+      const unit=pattern+"   ";
+      const repeated=unit.repeat(Math.ceil((skyWidth+pattern.length+8)/unit.length)+2);
+      return repeated.slice(offset,offset+skyWidth);
     };
-    stampSky(grid,1,-1,stormLine(undersidePatterns[skyFrame%undersidePatterns.length],skyFrame%3));
-    stampSky(grid,2,-1,stormLine(undersidePatterns[(skyFrame+1)%undersidePatterns.length],(skyFrame+1)%3));
-    const rows=["  /   /   /   /   /   /   /   /   / ","/   /   /   /   /   /   /   /   /   / "," /  /  /  /  /  /  /  /  /  /  /  /  /"];
-    stampSky(grid,3,-1,rows[phase%3]);stampSky(grid,4,1,rows[(phase+1)%3]);
+    stampSky(grid,1,0,fillPattern(undersidePatterns[skyFrame%undersidePatterns.length],skyFrame%3));
+    stampSky(grid,2,0,fillPattern(undersidePatterns[(skyFrame+1)%undersidePatterns.length],(skyFrame+2)%4));
+    const heavyRainPatterns=["/   /   /  /   /   /  /   /   /  ","  /  /   /   /  /   /   /   /  /   "," /   /  /   /   /  /   /   /  /   / "];
+    const rainLine=(pattern,offset=0)=>{const repeated=(pattern+" ").repeat(Math.ceil((skyWidth+pattern.length)/pattern.length)+2);return repeated.slice(offset,offset+skyWidth);};
+    stampSky(grid,3,0,rainLine(heavyRainPatterns[phase%3],phase));
+    stampSky(grid,4,0,rainLine(heavyRainPatterns[(phase+1)%3],(phase+2)%4));
     return;
   }
 
@@ -476,8 +493,8 @@ function renderWeatherOverlay(grid){
   else {
     // Anchor the outer clouds to the derived sky edges and let the middle
     // cloud drift. This keeps Cloudy/Rain spanning the same width as the sea.
-    const right=Math.max(8,SKY_WIDTH-7);
-    const middle=Math.round(SKY_WIDTH/2)-3;
+    const right=Math.max(8,skyWidth-7);
+    const middle=Math.round(skyWidth/2)-3;
     const layouts=[
       [1,middle-2,right],
       [0,middle+1,right-1],
@@ -493,7 +510,8 @@ function renderWeatherOverlay(grid){
     sparse.forEach(([row,off])=>stampSky(grid,row,base-3+off,"'"));
   }else{
     const rainRows=[" '  '   '  '   '   '  '   '   '  '   ' ","   '  '   '   '  '   '  '   '   '  '   '"," '   '  '   '  '   '   '  '   '   '  ' "];
-    stampSky(grid,3,-1,rainRows[phase%3]);stampSky(grid,4,1,rainRows[(phase+1)%3]);
+    const rainLine=(pattern,offset=0)=>{const repeated=(pattern+" ").repeat(Math.ceil((skyWidth+pattern.length)/pattern.length)+2);return repeated.slice(offset,offset+skyWidth);};
+    stampSky(grid,3,0,rainLine(rainRows[phase%3],phase));stampSky(grid,4,0,rainLine(rainRows[(phase+1)%3],(phase+2)%4));
   }
 }
 function renderSky(){const grid=blankSky();renderCelestial(grid);renderWeatherOverlay(grid);sky.textContent=grid.map(r=>r.join("").replace(/\s+$/,"" )).join("\n");}
@@ -543,12 +561,39 @@ function availableNewspaperIssues(){
   if(player.newspaper.subscribed)return [];
   const issues=[];if(world.weatherSeason)issues.push(issueFromWeather(world.weatherSeason));
   if(world.seasonDay===DAYS_PER_SEASON)issues.push(issueFromWeather(ensureNextSeasonWeather()));
-  for(const old of (world.newspaperHistory||[]))issues.push(old);
   const seen=new Set();return issues.filter(i=>i&&!seen.has(i.key)&&seen.add(i.key)&&!findOwnedIssue(i.key));
 }
 function renderNewspaperShopRows(box){
   const issues=availableNewspaperIssues();if(!issues.length)return;const title=document.createElement("div");title.className="shopSectionTitle";title.textContent="NEWSPAPERS";box.appendChild(title);
   for(const issue of issues){const row=document.createElement("div");row.className="shopRow";const label=document.createElement("span");label.innerHTML=issue.season+", Year "+issue.year+'<div class="shopNote">Forecasts, local news, ads</div>';const price=document.createElement("span");price.textContent="$5.00";const buy=document.createElement("button");buy.className="smallButton";buy.textContent="Buy";buy.disabled=player.money<5;buy.addEventListener("click",()=>buyNewspaperIssue(issue));row.append(label,price,buy);box.appendChild(row);}
+}
+function isPastNewspaperIssue(season,year){
+  const issueSeason=seasons.indexOf(season),currentSeason=seasons.indexOf(world.season);
+  return year<world.year||(year===world.year&&issueSeason<currentSeason);
+}
+function historicalNewspaperIssue(season,year){return (world.newspaperHistory||[]).find(i=>i.key===issueKey(season,year))||null;}
+function buyOldNewspaperIssue(season,year){
+  const issue=historicalNewspaperIssue(season,year),cost=6;if(!issue||!isPastNewspaperIssue(season,year)||findOwnedIssue(issue.key)||player.money<cost)return;
+  player.money-=cost;addOwnedIssue(issue);addLog("buy","Bought the old "+season+", Year "+year+" Weymouth Wrap for $6.00.");shopMessage.textContent="The shopkeeper digs out an old copy of the Weymouth Wrap.";renderShopInventory();renderGearInventory();updateDisplays();saveGame();
+}
+function renderOldNewspaperShopRow(box){
+  const title=document.createElement("div");title.className="shopSectionTitle";title.textContent="OLD NEWSPAPERS";box.appendChild(title);
+  const row=document.createElement("div");row.className="shopRow oldNewspaperRow";const label=document.createElement("span");label.textContent="Issue";
+  const choices=document.createElement("span");choices.className="oldNewspaperChoices";const price=document.createElement("span");price.className="baitShopPrice";price.textContent="$6.00";const buy=document.createElement("button");buy.className="smallButton";buy.textContent="Buy";
+  const history=(world.newspaperHistory||[]).filter(i=>isPastNewspaperIssue(i.season,i.year)).slice().sort((a,b)=>a.year-b.year||seasons.indexOf(a.season)-seasons.indexOf(b.season));
+  let selectedSeason=history.length?history[history.length-1].season:"Spring",selectedYear=history.length?history[history.length-1].year:world.year;
+  const seasonChoices=document.createElement("span"),yearChoices=document.createElement("span");seasonChoices.className=yearChoices.className="oldNewspaperChoiceGroup";
+  function choiceButton(text,value,kind){const b=document.createElement("button");b.className="baitQuantityChoice";b.textContent=text;b.dataset.value=value;b.addEventListener("click",()=>{if(kind==="season")selectedSeason=value;else selectedYear=Number(value);refresh();});return b;}
+  seasons.forEach((season,i)=>{if(i)seasonChoices.appendChild(document.createTextNode(" | "));seasonChoices.appendChild(choiceButton(season,season,"season"));});
+  for(let year=1;year<=world.year;year++){if(year>1)yearChoices.appendChild(document.createTextNode(" | "));yearChoices.appendChild(choiceButton("Year "+year,String(year),"year"));}
+  choices.append(seasonChoices,document.createTextNode("   "),yearChoices);
+  function refresh(){
+    seasonChoices.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.value===selectedSeason));yearChoices.querySelectorAll("button").forEach(b=>b.classList.toggle("active",Number(b.dataset.value)===selectedYear));
+    const key=issueKey(selectedSeason,selectedYear),past=isPastNewspaperIssue(selectedSeason,selectedYear),owned=!!findOwnedIssue(key),available=!!historicalNewspaperIssue(selectedSeason,selectedYear);
+    buy.disabled=!past||owned||!available||player.money<6;
+    buy.title=!past?"That hasn't happened yet.":owned?"You already own this issue.":!available?"That issue isn't available.":player.money<6?"You don't have enough money.":"";
+  }
+  buy.addEventListener("click",()=>buyOldNewspaperIssue(selectedSeason,selectedYear));refresh();row.append(label,choices,price,buy);box.appendChild(row);
 }
 function updateNewspaperFishingLink(){if(!newspaperFishingLink)return;newspaperFishingLink.style.display=currentIssue()&&pierPanel.style.display!=="none"?"block":"none";}
 function forecastSummary(day){const w=day?.parts?.Day||day?.parts?.Morning||{};const wind=String(w.wind||"Light").toLowerCase();let weather=String(w.name||"Clear").toLowerCase();let windText=wind==="calm"?"calm":wind==="light"?"light wind":wind+" winds";return {temp:(w.temperatureF??"—")+"°",text:weather+", "+windText};}
