@@ -129,19 +129,35 @@ function selectDepth(depth){
 
 function renderLocationTabs(){
   locationTabs.innerHTML="";
-  const atSea=["coastal_waters","dads_island"].includes(world.location);
+  const seaLocationIds=["coastal_waters","dads_island"];
+  const atSea=seaLocationIds.includes(world.location);
   const atPier=world.location==="old_pier";
-  if(utilityTabs)utilityTabs.style.display=atSea?"none":"flex";
+
+  // The Old Pier is a dedicated boat hub. Town services and inland fishing
+  // locations disappear here (and while at sea), keeping the nav compact and
+  // leaving room for future unlocked boat destinations.
+  if(utilityTabs)utilityTabs.style.display=(atPier||atSea)?"none":"flex";
+
+  if(atPier){
+    const back=document.createElement("button");
+    back.className="locationTab";
+    back.textContent="Back";
+    back.title="Return to the Fishing Hole.";
+    back.addEventListener("click",()=>goToFishingLocation("fishing_hole"));
+    locationTabs.appendChild(back);
+  }
 
   for(const loc of Object.values(locations)){
-    const seaDestination=["coastal_waters","dads_island"].includes(loc.id);
+    const seaDestination=seaLocationIds.includes(loc.id);
     if(loc.id==="dads_island"&&!world.storyFlags?.islandUnlocked)continue;
 
-    // Sea destinations live behind the Old Pier. While out at sea, only boat
-    // destinations and the Old Pier are shown; the pier is the route home.
-    if(atSea){
+    if(atPier){
+      if(!seaDestination)continue;
+    }else if(atSea){
+      // At sea, the Old Pier is the route back to shore; other available sea
+      // destinations remain visible for boat travel.
       if(loc.id!=="old_pier"&&!seaDestination)continue;
-    }else if(!atPier&&seaDestination){
+    }else if(seaDestination){
       continue;
     }
 
