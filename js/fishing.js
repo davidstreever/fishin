@@ -377,7 +377,7 @@ function chooseFightEffort(profile,staminaPercent,fullStrength=false){
   return clamp(raw,0.28,1);
 }
 function startFight(){
-  state="reeling";isReeling=false;isHoldingPressure=false;fishFighting=false;startingDistance=nibbleDepth;fishDistance=startingDistance;maxFightDistance=startingDistance*1.75;fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fightEffort=0;fightEffortBand="rest";debugLastFightCheck="—";debugLastContinueCheck="—";
+  state="reeling";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;startingDistance=nibbleDepth;fishDistance=startingDistance;maxFightDistance=startingDistance*1.75;fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fightEffort=0;fightEffortBand="rest";debugLastFightCheck="—";debugLastContinueCheck="—";
   const profile=currentFish.fightProfile || {staminaMultiplier:1,aggression:0.55,staminaDrain:0.9};
   maxFishStamina=(70+currentWeight*8+currentFish.fightPower*15)*profile.staminaMultiplier;fishStamina=maxFishStamina;fightCooldown=0.45;fightRemaining=0;
   baselineTension=getBaselineTension();
@@ -412,6 +412,7 @@ function aggressionFightChance(profile,staminaPercent){
 function fightTick(){
   if(state!=="reeling")return;
   const dt=0.1;
+  fightElapsed+=dt;
   const rod=getEquippedRod();
   const reel=getEquippedReel();
   const profile=currentFish.fightProfile || {staminaMultiplier:1,aggression:0.55,staminaDrain:0.9};
@@ -544,6 +545,7 @@ function renderDebugFightMeters(){
     const fightState=fishFighting?(fightEffortBand.toUpperCase()+" PULL"):"RESTING";
     html+=`<div class="debugFishStats">
       <div><strong>${currentFish?currentFish.name:"Fish"}</strong> — ${currentWeight.toFixed(2)} lb</div>
+      <div>FIGHT TIME — ${fightElapsed.toFixed(1)}s</div>
       <div>STAMINA — ${fishStamina.toFixed(1)} / ${maxFishStamina.toFixed(1)} (${staminaPct.toFixed(1)}%)</div>
       <div>STATE — ${fightState}</div>
       <div>STRENGTH — ${currentFish.fightPower.toFixed(2)}</div>
@@ -643,7 +645,7 @@ function chooseFish(depth){
 function calculateNibbleDepth(weight){const base=5;let pull=Math.round(Math.min(weight,8))+randomNumber(-1,1);return Math.max(base,Math.min(12,base+pull));}
 function drawLine(){line.innerHTML="";for(let i=0;i<lineDepth;i++){const dot=document.createElement("span");dot.className="lineDot";dot.textContent="•";line.appendChild(dot);}}
 function resetFishing(){
-  clearFishingTimers();state="ready";isReeling=false;isHoldingPressure=false;fishFighting=false;tension=0;baselineTension=0;fightEffort=0;fightEffortBand="rest";fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fishStamina=100;maxFishStamina=100;surgeStartStaminaPercent=1;debugLastFightCheck="—";debugLastContinueCheck="—";lineDepth=0;currentFish=null;currentWeight=0;currentEncounterType=null;currentJunk=null;currentOffDepth=false;nibbleCount=0;successfulTwitches=0;twitchPrimed=false;pendingNervousnessMultiplier=1;disturbance=0;lastNibbleAt=0;fishHasLeft=false;
+  clearFishingTimers();state="ready";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;tension=0;baselineTension=0;fightEffort=0;fightEffortBand="rest";fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fishStamina=100;maxFishStamina=100;surgeStartStaminaPercent=1;debugLastFightCheck="—";debugLastContinueCheck="—";lineDepth=0;currentFish=null;currentWeight=0;currentEncounterType=null;currentJunk=null;currentOffDepth=false;nibbleCount=0;successfulTwitches=0;twitchPrimed=false;pendingNervousnessMultiplier=1;disturbance=0;lastNibbleAt=0;fishHasLeft=false;
   fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";pullUpButton.style.display="none";drawLine();message.textContent="";hint.textContent="";renderCreel();renderGearInventory();updateDisplays();updateTimeControls();if(typeof updateDepthDisplay==="function")updateDepthDisplay();
 }
 function clearFishingTimers(){clearInterval(lineTimer);clearInterval(fightTimer);clearInterval(disturbanceTimer);clearTimeout(nibbleTimer);clearTimeout(biteTimer);clearTimeout(resetTimer);}

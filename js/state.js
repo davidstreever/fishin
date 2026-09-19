@@ -128,6 +128,7 @@ let maxFightDistance = 0;
 let isReeling = false;
 let isHoldingPressure = false;
 let fishFighting = false;
+let fightElapsed = 0;
 let fightRemaining = 0;
 let fightCooldown = 0;
 let fishStamina = 100;
