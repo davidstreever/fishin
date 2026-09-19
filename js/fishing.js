@@ -461,25 +461,27 @@ function fightTick(){
     }
   }
 
-  const staminaPercent=maxFishStamina>0?fishStamina/maxFishStamina:0;
   const effort=fishFighting?fightEffort:0;
   const effortPower=fishFighting?(0.25+Math.min(1.25,effort)*0.75):0;
 
   // Distance is now the sole geometry cue. No lateral line movement or leverage
   // is derived from a visual swing.
   const runRate=(0.7+currentWeight*0.12)*currentFish.fightPower*effortPower;
-  const fightingReelRate=4.5*reel.reelPower;
-  const passiveStrength=currentFish.fightPower*(0.25+staminaPercent*0.45);
-  const passiveResistance=Math.min(0.72,(currentWeight/(currentWeight+6))*0.42+passiveStrength*0.055);
-  const calmReelRate=1.7*reel.reelPower*(1-passiveResistance);
+  // Rest is the player's clean retrieval window. Active effort progressively
+  // reduces reel effectiveness, while the fish's run still contests what remains.
+  const restReelRate=4.5*reel.reelPower;
+  const effortResistance=fishFighting?clamp(effortPower*0.55,0,0.75):0;
+  const fightingReelRate=restReelRate*(1-effortResistance);
 
   if(isReeling){
     if(fishFighting){
       tension+=(20+currentWeight*4.2)*currentFish.fightPower*effortPower*rod.tensionMultiplier*dt;
       fishDistance+=(runRate-fightingReelRate)*dt;
     }else{
-      tension+=5.5*rod.tensionMultiplier*dt;
-      fishDistance-=calmReelRate*dt;
+      // Reeling during rest adds no tension of its own. Any tension left by a
+      // surge settles toward the persistent weight-derived baseline.
+      tension-=13*dt;
+      fishDistance-=restReelRate*dt;
     }
   }else if(isHoldingPressure && fishFighting){
     // Hold Pressure makes the fish work while protecting the line.
