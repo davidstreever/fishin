@@ -566,6 +566,7 @@ function drawTensionGrid(){
   lineStage.dataset.tensionView=view;
   tensionGrid.classList.toggle("active",state==="reeling" && view==="original");
   tensionFillLayer.style.height=level+"%";
+  tensionFillLayer.classList.toggle("warning",level>=60 && level<80);
   tensionFillLayer.classList.toggle("danger",level>=80);
   if(tensionInstrument){
     tensionInstrument.classList.toggle("active",state==="reeling" && view!=="original");
