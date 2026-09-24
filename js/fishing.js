@@ -562,9 +562,20 @@ function renderDebugFightMeters(){
 function drawTensionGrid(){
   if(!tensionGrid || !tensionFillLayer)return;
   const level=Math.round(clamp(tension,0,100));
-  tensionGrid.classList.toggle("active",state==="reeling");
+  const view=tensionViewSelect?.value||"original";
+  lineStage.dataset.tensionView=view;
+  tensionGrid.classList.toggle("active",state==="reeling" && view==="original");
   tensionFillLayer.style.height=level+"%";
   tensionFillLayer.classList.toggle("danger",level>=80);
+  if(tensionInstrument){
+    tensionInstrument.classList.toggle("active",state==="reeling" && view!=="original");
+    tensionInstrument.style.setProperty("--tension-level",level);
+    tensionInstrument.style.setProperty("--needle-angle",(-65+level*1.3)+"deg");
+    tensionInstrument.style.setProperty("--track-position",(level*0.66)+"px");
+    tensionInstrument.style.setProperty("--spring-position",((100-level)*0.68)+"px");
+    tensionInstrument.setAttribute("aria-valuenow",String(level));
+    tensionInstrument.setAttribute("aria-valuetext",level+" percent line tension"+(level>=80?", danger":""));
+  }
 }
 function drawFightLine(){
   line.innerHTML="";
@@ -602,7 +613,7 @@ function updateAllTimeBest(fish,weight){
 }
 
 function landFish(){
-  clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";catchIdCounter++;
+  clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";catchIdCounter++;
   const trophy=isTrophyFish(currentFish,currentWeight);if(trophy)player.pub.unacknowledgedTrophy=true;const value=currentWeight*currentFish.valuePerPound*(trophy?TROPHY_VALUE_MULTIPLIER:1);
   const rec={id:catchIdCounter,speciesId:currentFish.id,name:currentFish.name,weight:currentWeight,baseValue:value,status:"kept",caughtAt:new Date(),location:world.location,weather:getCurrentWeatherTags(),season:world.season,day:world.seasonDay,time:getTimeLabel(),bait:player.selectedBait,depth:currentDepth,offDepth:currentOffDepth,trophy};
   const priorSpecies=player.catchHistory.filter(c=>c.speciesId===currentFish.id);const isNewSpecies=priorSpecies.length===0;const priorBest=priorSpecies.length?Math.max(...priorSpecies.map(c=>c.weight)):0;const isPersonalBest=currentWeight>priorBest;const newAllTime=updateAllTimeBest(currentFish,currentWeight);
@@ -619,7 +630,7 @@ You caught a trophy ${currentFish.name}!`:"You caught a "+currentFish.name+"!";h
   if(trophy){fishButton.disabled=true;pullUpButton.style.display="none";sleepButton.disabled=true;marketButton.disabled=true;shopButton.disabled=true;}
   saveGame();if(!trophy&&!isWorkDue()&&!isSleepChoice())fishButton.textContent="Cast Again";resetTimer=setTimeout(()=>{if(state==="finished")resetFishing();},trophy?3400:2200);
 }
-function loseFish(reason){if(reason==="The line snaps." && fishFighting)player.pub.lineBrokenDuringSurge=true;gainObsession(obsessionForLoss(currentWeight),"big loss");clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb. "+reason);message.textContent="You lost the fish.";hint.textContent=reason+"\nYour bait is gone too.";finishFishingFailure();}
+function loseFish(reason){if(reason==="The line snaps." && fishFighting)player.pub.lineBrokenDuringSurge=true;gainObsession(obsessionForLoss(currentWeight),"big loss");clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb. "+reason);message.textContent="You lost the fish.";hint.textContent=reason+"\nYour bait is gone too.";finishFishingFailure();}
 function finishFishingFailure(){lineDepth=0;drawLine();updateTimeControls();saveGame();if(!isWorkDue()&&!isSleepChoice())fishButton.textContent="Cast Again";resetTimer=setTimeout(()=>{if(state==="finished")resetFishing();},1800);}
 
 function chooseFish(depth){
@@ -646,7 +657,7 @@ function calculateNibbleDepth(weight){const base=5;let pull=Math.round(Math.min(
 function drawLine(){line.innerHTML="";for(let i=0;i<lineDepth;i++){const dot=document.createElement("span");dot.className="lineDot";dot.textContent="•";line.appendChild(dot);}}
 function resetFishing(){
   clearFishingTimers();state="ready";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;tension=0;baselineTension=0;fightEffort=0;fightEffortBand="rest";fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fishStamina=100;maxFishStamina=100;surgeStartStaminaPercent=1;debugLastFightCheck="—";debugLastContinueCheck="—";lineDepth=0;currentFish=null;currentWeight=0;currentEncounterType=null;currentJunk=null;currentOffDepth=false;nibbleCount=0;successfulTwitches=0;twitchPrimed=false;pendingNervousnessMultiplier=1;disturbance=0;lastNibbleAt=0;fishHasLeft=false;
-  fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";pullUpButton.style.display="none";drawLine();message.textContent="";hint.textContent="";renderCreel();renderGearInventory();updateDisplays();updateTimeControls();if(typeof updateDepthDisplay==="function")updateDepthDisplay();
+  fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";pullUpButton.style.display="none";drawLine();message.textContent="";hint.textContent="";renderCreel();renderGearInventory();updateDisplays();updateTimeControls();if(typeof updateDepthDisplay==="function")updateDepthDisplay();
 }
 function clearFishingTimers(){clearInterval(lineTimer);clearInterval(fightTimer);clearInterval(disturbanceTimer);clearTimeout(nibbleTimer);clearTimeout(biteTimer);clearTimeout(resetTimer);}
 function randomNumber(min,max){return Math.floor(Math.random()*(max-min+1))+min;}

@@ -20,6 +20,7 @@
     <div class="debugSection"><button id="debugAddMoneyButton">+ $100</button></div>
     <div class="debugSection"><label><input type="checkbox" id="debugTravelToggle"> INSTANT TRAVEL</label></div>
     <div class="debugSection"><label><input type="checkbox" id="debugFightMetersToggle"> FIGHT METERS</label></div>
+    <div class="debugSection"><label for="tensionViewSelect">TENSION VIEW</label><select id="tensionViewSelect"><option value="original">Original fill</option><option value="dial">A — dial</option><option value="track">B — needle track</option><option value="spring">C — spring scale</option></select></div>
     <div class="debugSection"><label><input type="checkbox" id="debugFishStatsToggle"> SHOW FISH STATS</label></div>
     <div class="debugSection"><label><input type="checkbox" id="debugSpecifyFishToggle"> SPECIFY FISH</label></div>
     <div class="debugSection">
@@ -107,7 +108,7 @@
       <div id="water"></div>
 
       <div id="fishingArea">
-        <div id="lineStage"><div id="tensionGrid" aria-hidden="true"><div id="tensionFillLayer"></div></div><div id="line"></div></div>
+        <div id="lineStage"><div id="tensionGrid" aria-hidden="true"><div id="tensionFillLayer"></div></div><div id="tensionInstrument" aria-label="Line tension" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="gaugeTitle">TENSION</div><div class="gaugeDial"><div class="dialArc"></div><div class="dialNeedle"></div><div class="dialPivot"></div><span class="dialLow">0</span><span class="dialHigh">!</span></div><div class="gaugeTrack"><div class="trackRail"><div class="trackNeedle"></div></div><div class="trackEnds"><span>0</span><span>!</span></div></div><div class="gaugeSpring"><div class="springRail"><div class="springNeedle"></div></div><span class="springHigh">!</span><span class="springLow">0</span></div></div><div id="line"></div></div>
         <div id="readout">
           <div id="message"></div>
           <div id="fightPanel"></div>

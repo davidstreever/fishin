@@ -77,3 +77,27 @@ body{font-family:monospace;max-width:760px;margin:50px auto;padding:20px;backgro
 /* Straight-on full newspaper prop. #status is positioned, so this sits inside the fishing box. */
 .newspaperFishingLink{transform:none!important;bottom:18px!important;right:18px!important;font:12px/12px monospace!important}
 .newspaperFishingLink:hover{transform:translateY(-2px)!important}
+
+/* Tension display study. The original fill remains selectable in DEBUG. */
+#tensionInstrument{display:none;position:absolute;z-index:2;left:0;top:18px;width:74px;height:108px;box-sizing:border-box;color:#555;font-size:10px;pointer-events:none;--tension-level:0}
+#tensionInstrument.active{display:block}
+.gaugeTitle{font-size:10px;letter-spacing:.04em;text-align:center;margin-bottom:5px}
+.gaugeDial,.gaugeTrack,.gaugeSpring{display:none}
+#lineStage[data-tension-view="dial"] .gaugeDial{display:block}
+#lineStage[data-tension-view="track"] .gaugeTrack{display:block}
+#lineStage[data-tension-view="spring"] .gaugeSpring{display:block}
+.gaugeDial{position:relative;width:70px;height:51px;margin:auto}
+.dialArc{position:absolute;top:2px;left:3px;width:62px;height:62px;border:2px solid #888;border-bottom-color:transparent;border-left-color:#888;border-radius:50%;box-sizing:border-box;clip-path:inset(0 0 48% 0)}
+.dialArc:after{content:"";position:absolute;right:-2px;top:-2px;width:22px;height:22px;border-top:3px solid #711f1f;border-right:3px solid #711f1f;border-radius:0 100% 0 0}
+.dialNeedle{position:absolute;left:34px;bottom:9px;width:2px;height:29px;background:#333;transform-origin:50% 100%;transform:rotate(var(--needle-angle));transition:transform .1s linear}
+.dialPivot{position:absolute;left:31px;bottom:6px;width:8px;height:8px;border-radius:50%;background:#333}
+.dialLow,.dialHigh{position:absolute;bottom:0}.dialLow{left:0}.dialHigh{right:0;color:#711f1f;font-weight:bold}
+.trackRail{position:relative;height:18px;border:1px solid #888;background:linear-gradient(to right,transparent 79%,rgba(113,31,31,.25) 79%);box-sizing:border-box}
+.trackRail:before{content:"|    |    |    |";position:absolute;left:2px;top:1px;color:#aaa;white-space:pre}
+.trackNeedle{position:absolute;z-index:1;top:-5px;left:var(--track-position);width:2px;height:26px;background:#333;transition:left .1s linear}
+.trackEnds{display:flex;justify-content:space-between;margin-top:3px}.trackEnds span:last-child{color:#711f1f;font-weight:bold}
+.gaugeSpring{position:relative;height:80px}
+.springRail{position:absolute;left:28px;top:2px;width:15px;height:72px;border:1px solid #888;background:repeating-linear-gradient(to bottom,transparent 0 12px,#aaa 12px 13px);box-sizing:border-box}
+.springRail:before{content:"";position:absolute;left:0;right:0;top:0;height:20%;background:rgba(113,31,31,.2)}
+.springNeedle{position:absolute;left:-6px;top:var(--spring-position);width:25px;height:3px;background:#333;transition:top .1s linear}
+.springHigh,.springLow{position:absolute;left:50px}.springHigh{top:0;color:#711f1f;font-weight:bold}.springLow{bottom:2px}
