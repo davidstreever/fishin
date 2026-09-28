@@ -133,7 +133,7 @@ const specialAbilities = {
   feint:{id:"feint",name:"Feint",triggerChance:0.40,followupSurgeMultiplier:1.65,restDuration:1.30,restTarget:-0.21},
   last_gasp:{id:"last_gasp",name:"Last Gasp",threshold:0.25},
   quick_recovery:{id:"quick_recovery",name:"Quick Recovery",threshold:0.45,recoveryFraction:0.25,chance:0.45},
-  quick_reaction:{id:"quick_reaction",name:"Quick Reaction",chance:0.98}
+  quick_reaction:{id:"quick_reaction",name:"Quick Reaction",chance:0.98,minDuration:2.1}
 };
 function fishDef(id,name,waterType,minWeight,maxWeight,trophyWeight,valuePerPound,fightPower,depthPreferences,rarity,baitPreferences,weatherPreferences,seasonPreferences,timePreferences,nibbleBehavior,hookWindow=1800,specialAbilityIds=[]){
   return {id,name,waterType,minWeight,maxWeight,trophyWeight,valuePerPound,fightPower,depthPreferences,rarity,baitPreferences,weatherPreferences,seasonPreferences,timePreferences,nibbleBehavior,hookWindow,specialAbilities:specialAbilityIds};
@@ -159,12 +159,12 @@ const offshoreTimes={Dawn:1.1,"Early Morning":1.0,"Mid Morning":1.0,"Late Mornin
 const fishTypes = [
   // Freshwater
   fishDef("pumpkinseed","Pumpkinseed","freshwater",0.15,1.25,1.05,2.20,0.55,{shallow:1.00,mid:0.20,deep:0.03},"common",{"Worm":1.8,"Minnow":0.5,"Insect":1.7,"Grub":1.4},["SUN","HOT"],["Spring","Summer"],dayTimes,veryEager,2200),
-  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.75,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950,["quick_reaction"]),
+  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.90,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950,["quick_reaction"]),
   fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,2.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,normalNibble,1650,["feint"]),
   fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,2.30,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,brookTroutNibble,1700,["quick_recovery"]),
   fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,2.50,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,normalNibble,1600),
   fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,2.80,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,cautious,1600,["last_gasp"]),
-  fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,1.10,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,eager,1850),
+  fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,1.10,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,eager,1850,["quick_reaction"]),
   fishDef("landlocked_salmon","Landlocked Salmon","freshwater",1.0,12.0,8.5,6.50,2.50,{shallow:0.10,mid:1.00,deep:0.65},"uncommon",{"Worm":0.7,"Minnow":1.9,"Insect":1.0,"Grub":0.8},["COLD","SHADE"],["Spring","Fall"],dayTimes,cautious,1500),
   fishDef("lake_trout","Lake Trout","freshwater",1.5,25.0,16.0,6.75,2.50,{shallow:0.02,mid:0.25,deep:1.00},"uncommon",{"Worm":0.6,"Minnow":1.9,"Insect":0.6,"Grub":0.7},["COLD"],["Spring","Fall"],offshoreTimes,cautious,1450),
   fishDef("cusk_fresh","Cusk","freshwater",0.75,15.0,9.0,4.50,1.65,{shallow:0.02,mid:0.20,deep:1.00},"uncommon",{"Worm":1.2,"Minnow":1.6,"Insect":0.7,"Grub":1.0},["COLD","SHADE"],["Spring","Fall"],nightTimes,normalNibble,1700),
