@@ -49,6 +49,14 @@ This file records durable decisions for Fishin'. The current files in this folde
 - Dad inherited substantial family money but obsession kept him from meaningfully using it. Dad's father was affected by the same pattern. On later runs, retained knowledge may reveal the inheritance. Finding it should grant genuinely game-breaking financial independence while leaving supernatural and relationship danger intact.
 - Dad's likely final sequence is: living on or visiting Dad's Island increasingly; returning to shore in late winter; leaving his boat at Old Pier; going to The Black Dog; driving inland; abandoning his broken-down truck; then being found on the coast. The official cause of death is drowning. The intended eventual realization is that Dad tried to stop too late.
 - Spring, summer, and fall are normal playable seasons. Winter should become an intermission and reckoning chapter. Winter Year 1 centers on exploring Dad's House through authored choices, discoveries, and estate consequences, without repetitive cleaning tasks. Later winters evaluate combinations of obsession, security, marriage and family, housing, health and fatigue, and supernatural involvement.
+- Reference the protagonist's wife occasionally in morning and night messages. As obsession rises, these moments should give the player early, increasingly clear signs of strain at home rather than making the relationship change arrive without warning. **Writing task for David:** write the actual lines and progression beats; do not generate final dialogue as part of a mechanics pass.
+
+### Open progression decisions
+
+- Work out how quitting the job affects money and the marriage, including whether and when divorce can occur. These outcomes and thresholds are not decided yet.
+- Likely direction: quitting removes job income. If fishing earnings cannot cover ordinary living needs, financial security worsens and causes accumulating negative effects that can eventually lead to death. Inadequate sleep should feed the same downward pressure. Decide the pacing and recovery paths before implementation.
+- Treat meals and basic sustenance as part of that abstract living-needs system. Do not add an "Eat a meal" button.
+
 
 ## Newspaper and audio
 
