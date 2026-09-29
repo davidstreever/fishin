@@ -21,7 +21,7 @@ This file records durable decisions for Fishin'. The current files in this folde
 - Fish weight creates baseline tension immediately. Effort adds dynamic tension above it. Better rods help with tension; better reels improve retrieval.
 - Rest is the best chance to reel. Rest does not add tension; tension settles toward the weight-derived baseline. Stronger effort progressively reduces retrieval and increases tension.
 - Hold Pressure is a learned technique. It adds no tension, reduces line loss, and increases fish stamina drain.
-- Preserve the existing special fish abilities, including Pickerel Feint, Brook Trout Quick Recovery, Largemouth Last Gasp, and Yellow Perch Quick Reaction.
+- Preserve the existing special fish abilities, including Pickerel Feint, Brook Trout Quick Recovery, Largemouth Last Gasp, and the Yellow Perch and White Perch Quick Reaction. Quick Reaction's opening run lasts at least 2.1 seconds so it cannot be reeled through with starter gear; Yellow Perch fight power is 1.9, and White Perch fight power is 2.2.
 - Freshwater fishing currently feels good. Do not broadly rebalance it without playtest evidence.
 - The line is the primary fight visualization. A tension display should answer how close the line is to breaking: weight sets its baseline, surges move it toward danger, rest lets it settle, and its maximum means imminent failure.
 

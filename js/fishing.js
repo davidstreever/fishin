@@ -383,9 +383,10 @@ function startFight(){
   baselineTension=getBaselineTension();
   tension=baselineTension;
   if(fishHasSpecialAbility("quick_reaction") && Math.random()<(specialAbilities.quick_reaction?.chance ?? 0.98)){
-    // Perch's signature opening run should still demand respect even though its
-    // normal aggression remains modest after the initial reaction.
+    // Perch's signature opening run should last long enough that starter gear
+    // cannot simply reel through it.
     startSurge(profile,1,false,0.95);
+    fightRemaining=Math.max(fightRemaining,specialAbilities.quick_reaction.minDuration);
     debugLastFightCheck="QUICK REACTION";
   }
   fightPanel.classList.add("active");normalControls.style.display="none";fightControls.style.display="flex";fightPressureButton.style.display=knowsTechnique("hold_pressure")?"inline-block":"none";message.textContent="Fish on!";hint.textContent="";fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";updateFightDisplay();fightTimer=setInterval(fightTick,100);
