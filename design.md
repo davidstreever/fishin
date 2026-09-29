@@ -32,6 +32,7 @@ This file records durable decisions for Fishin'. The current files in this folde
 - Brook Trout and Chain Pickerel fights feel good. Normal-weight bass felt appropriately hard in a later summer Big Lake session with Minnows on T1 gear, so do not increase bass strength based on the earlier easy catches alone.
 - At Big Lake in summer, Deep tackle with Grubs produced five Yellow Perch in five catches. Inspect the actual depth and encounter distribution before changing weights; the streak made Deep feel overly perch-heavy.
 - Pumpkinseed feels less common than desired in the early random-depth Fishing Hole playthrough; collect more encounter data before changing its weight.
+- A 5.07 lb Landlocked Salmon was landed with T1 gear in 8.9 seconds with 83.6% stamina remaining. That was too easy for the intended late-game freshwater fight. Try a salmon-only 2.8-second moderate opening pull and playtest small, normal, and trophy salmon on T1 and upgraded gear before further tuning.
 
 ## Interface and world
 
