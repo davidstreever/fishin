@@ -54,6 +54,7 @@ This file records durable decisions for Fishin'. The current files in this folde
 ### Open progression decisions
 
 - Work out how quitting the job affects money and the marriage, including whether and when divorce can occur. These outcomes and thresholds are not decided yet.
+- The player can also lose the job during the winter while occupied with cleaning Dad's house, or by sleeping through work. Define the conditions and warning beats for each route before implementing them; both should feed the same loss-of-income consequences as quitting.
 - Likely direction: quitting removes job income. If fishing earnings cannot cover ordinary living needs, financial security worsens and causes accumulating negative effects that can eventually lead to death. Inadequate sleep should feed the same downward pressure. Decide the pacing and recovery paths before implementation.
 - Treat meals and basic sustenance as part of that abstract living-needs system. Do not add an "Eat a meal" button.
 
