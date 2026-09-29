@@ -389,6 +389,13 @@ function startFight(){
     fightRemaining=Math.max(fightRemaining,specialAbilities.quick_reaction.minDuration);
     debugLastFightCheck="QUICK REACTION";
   }
+  if(profile.openingPullDuration){
+    // Sustained moderate effort gives a strong fish time to contest the opening
+    // distance before the player can reel it in during short ordinary rests.
+    startSurge(profile,1,false,profile.openingPullEffort);
+    fightRemaining=Math.max(fightRemaining,profile.openingPullDuration);
+    debugLastFightCheck="SUSTAINED PULL";
+  }
   fightPanel.classList.add("active");normalControls.style.display="none";fightControls.style.display="flex";fightPressureButton.style.display=knowsTechnique("hold_pressure")?"inline-block":"none";message.textContent="Fish on!";hint.textContent="";fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";updateFightDisplay();fightTimer=setInterval(fightTick,100);
 }
 function startSurge(profile,multiplier=1,fullStrength=false,effortOverride=null){
