@@ -23,7 +23,15 @@ This file records durable decisions for Fishin'. The current files in this folde
 - Hold Pressure is a learned technique. It adds no tension, reduces line loss, and increases fish stamina drain.
 - Preserve the existing special fish abilities, including Pickerel Feint, Brook Trout Quick Recovery, Largemouth Last Gasp, and the Yellow Perch and White Perch Quick Reaction. Quick Reaction's opening run lasts at least 2.1 seconds so it cannot be reeled through with starter gear; Yellow Perch fight power is 1.9, and White Perch fight power is 2.2.
 - Freshwater fishing currently feels good. Do not broadly rebalance it without playtest evidence.
+- The Old Timer should suggest upgrading fishing gear by fall, or sooner after the player first breaks a line. Make it a contextual, one-time hint rather than a repeated reminder.
 - The line is the primary fight visualization. A tension display should answer how close the line is to breaking: weight sets its baseline, surges move it toward danger, rest lets it settle, and its maximum means imminent failure.
+
+## Current playtest observations
+
+- In a clean T1 playthrough, the player bought the Maine Fishing Atlas and repaired the truck in time to explore other spots by summer; that progression felt good.
+- Brook Trout and Chain Pickerel fights feel good. Normal-weight bass felt appropriately hard in a later summer Big Lake session with Minnows on T1 gear, so do not increase bass strength based on the earlier easy catches alone.
+- At Big Lake in summer, Deep tackle with Grubs produced five Yellow Perch in five catches. Inspect the actual depth and encounter distribution before changing weights; the streak made Deep feel overly perch-heavy.
+- Pumpkinseed feels less common than desired in the early random-depth Fishing Hole playthrough; collect more encounter data before changing its weight.
 
 ## Interface and world
 
