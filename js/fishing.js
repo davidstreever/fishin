@@ -423,7 +423,8 @@ function fightTick(){
     // Effort is continuous rather than binary. Hard pulls cost substantially
     // more stamina; Hold Pressure forces the fish to spend even more.
     const effortCost=0.45+Math.min(1.25,fightEffort)*1.10;
-    const drain=(7.0+currentWeight*0.45)*profile.staminaDrain*effortCost*(isHoldingPressure?1.55:1)*dt;
+    const pressureDrain=isHoldingPressure?1.55*(rod.pressureStaminaMultiplier ?? 1):1;
+    const drain=(7.0+currentWeight*0.45)*profile.staminaDrain*effortCost*pressureDrain*dt;
     fishStamina=clamp(fishStamina-drain,0,maxFishStamina);
     if(fightRemaining<=0 || fishStamina<=0){
       fishFighting=false;fightEffort=0;fightEffortBand="rest";
@@ -488,7 +489,7 @@ function fightTick(){
   }else if(isHoldingPressure && fishFighting){
     // Hold Pressure makes the fish work while protecting the line.
     tension-=6.5*dt;
-    fishDistance+=runRate*0.30*dt;
+    fishDistance+=runRate*(reel.pressureRunMultiplier ?? 0.30)*dt;
   }else{
     if(fishFighting){
       tension-=22*dt;
