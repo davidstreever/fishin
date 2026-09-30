@@ -72,17 +72,17 @@ const locationFishWeights = {
 };
 
 const rods = {
-  old_rod:{id:"old_rod",name:"Old Rod",cost:0,tensionMultiplier:1.00,note:"Cheap, dependable. Not built for monsters."},
-  fiberglass_rod:{id:"fiberglass_rod",name:"Fiberglass Rod",cost:35,tensionMultiplier:0.90,note:"Tough and forgiving under pressure."},
-  graphite_rod:{id:"graphite_rod",name:"Graphite Rod",cost:110,tensionMultiplier:0.78,note:"Light, strong, and responsive."},
-  boron_rod:{id:"boron_rod",name:"Boron Rod",cost:325,tensionMultiplier:0.65,note:"For serious anglers."}
+  old_rod:{id:"old_rod",name:"Old Rod",cost:0,tensionMultiplier:1.00,pressureStaminaMultiplier:1.00,note:"Cheap, dependable. Not built for monsters."},
+  fiberglass_rod:{id:"fiberglass_rod",name:"Fiberglass Rod",cost:35,tensionMultiplier:0.90,pressureStaminaMultiplier:1.10,note:"Tough and forgiving under pressure."},
+  graphite_rod:{id:"graphite_rod",name:"Graphite Rod",cost:110,tensionMultiplier:0.78,pressureStaminaMultiplier:1.22,note:"Light, strong, and responsive."},
+  boron_rod:{id:"boron_rod",name:"Boron Rod",cost:325,tensionMultiplier:0.65,pressureStaminaMultiplier:1.35,note:"For serious anglers."}
 };
 
 const reels = {
-  old_reel:{id:"old_reel",name:"Old Reel",cost:0,reelPower:1.00,note:"It works."},
-  aluminum_reel:{id:"aluminum_reel",name:"Aluminum Reel",cost:25,reelPower:1.10,note:"A smoother, stronger reel."},
-  carbon_reel:{id:"carbon_reel",name:"Carbon Reel",cost:85,reelPower:1.25,note:"Lightweight and precise."},
-  titanium_reel:{id:"titanium_reel",name:"Titanium Reel",cost:250,reelPower:1.45,note:"The best money can buy."}
+  old_reel:{id:"old_reel",name:"Old Reel",cost:0,reelPower:1.00,pressureRunMultiplier:0.30,note:"It works."},
+  aluminum_reel:{id:"aluminum_reel",name:"Aluminum Reel",cost:25,reelPower:1.10,pressureRunMultiplier:0.27,note:"A smoother, stronger reel."},
+  carbon_reel:{id:"carbon_reel",name:"Carbon Reel",cost:85,reelPower:1.25,pressureRunMultiplier:0.24,note:"Lightweight and precise."},
+  titanium_reel:{id:"titanium_reel",name:"Titanium Reel",cost:250,reelPower:1.45,pressureRunMultiplier:0.21,note:"The best money can buy."}
 };
 
 const vehicles = {
