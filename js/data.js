@@ -197,7 +197,7 @@ const fishFightProfiles = {
   smallmouth_bass:{staminaMultiplier:1.22,aggression:0.88,staminaDrain:0.82},
   largemouth_bass:{staminaMultiplier:1.32,aggression:0.72,staminaDrain:0.82},
   white_perch:{staminaMultiplier:0.78,aggression:0.48,staminaDrain:1.10},
-  landlocked_salmon:{staminaMultiplier:1.55,aggression:0.82,staminaDrain:0.72},
+  landlocked_salmon:{staminaMultiplier:1.55,aggression:0.92,staminaDrain:0.72},
   lake_trout:{staminaMultiplier:1.65,aggression:0.38,staminaDrain:0.62},
   cusk_fresh:{staminaMultiplier:1.30,aggression:0.34,staminaDrain:0.72},
   arctic_charr:{staminaMultiplier:1.05,aggression:0.70,staminaDrain:0.88},
