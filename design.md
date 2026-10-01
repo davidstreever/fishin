@@ -35,6 +35,12 @@ This file records durable decisions for Fishin'. The current files in this folde
 - Pumpkinseed feels less common than desired in the early random-depth Fishing Hole playthrough; collect more encounter data before changing its weight.
 - A 5.07 lb Landlocked Salmon was landed with T1 gear in 8.9 seconds with 83.6% stamina remaining. That was too easy for the intended late-game freshwater fight. Raise its fight power from 2.5 to 3.0 and aggression from 0.82 to 0.92 using the shared fight model. Landlocked Salmon are endgame freshwater fish: T1 gear should be a substantial disadvantage even against normal weights, with upgrades making a clear difference. Salmon should fight persistently and generally be more depleted by landing; judge this through playtesting. Playtest small, normal, and trophy salmon on T1 and upgraded gear before further tuning.
 
+## Testing mode
+
+- One DEBUG checkbox enters isolated Testing Waters, enables forced species selection and live fish stats, and lists every freshwater and saltwater species including locked species. The existing weight bands remain available.
+- All rods, reels, tackle, and bait are temporarily available; learned techniques are preserved so tests report the actual unlocked skills. The calendar stays fixed and normal bite/fight rules remain active.
+- Log each encounter outcome, exact loss reason, full fish data, fight stats, equipped gear, unlocked techniques, books, conditions, and time spent reeling/holding/idle. Save test results separately across reloads. Turning testing off restores the normal playthrough; testing catches and progression never enter the normal save.
+
 ## Interface and world
 
 - Keep the UI compact and old-school. ASCII, CSS, and mechanical-instrument treatments fit. Avoid a polished modern-game HUD. Controls should generally look like text rather than native browser controls. The established red link color is `#ff7777`.
@@ -66,3 +72,4 @@ This file records durable decisions for Fishin'. The current files in this folde
 - The Weymouth Wrap has four annual editions. Authored content belongs in game data; facts specific to a run belong in save state.
 - A Spring Year 1 report about Dad's death or disappearance should be mundane. The reporter should not insert overt supernatural clues; ordinary facts gain meaning later.
 - Use no conventional soundtrack. Future audio should rely on small environmental layers and fishing one-shots. As obsession grows, ordinary sounds may rarely behave incorrectly, without becoming a supernatural soundtrack.
+
