@@ -3,6 +3,7 @@ const SAVE_KEY = "fishinSave";
 const META_SAVE_KEY = "fishinMeta";
 
 function saveMetaProgress(){
+  if(debugTestingMode)return;
   const meta={
     obsession:player.meta?.obsession||0,
     hasAmulet:!!player.meta?.hasAmulet,
@@ -24,6 +25,7 @@ function loadMetaProgress(){
 }
 
 function saveGame(){
+  if(debugTestingMode)return;
   const saveData={version:13,world,player,gameLogEntries,logIdCounter,catchIdCounter};
   localStorage.setItem(SAVE_KEY,JSON.stringify(saveData));
   saveMetaProgress();
@@ -80,7 +82,7 @@ function loadGame(){
     if((player.books.includes("advanced_freshwater")||player.books.includes("advanced_saltwater"))&&!player.meta.learnedTechniques.includes("twitch"))player.meta.learnedTechniques.push("twitch");
     if(!world.unlockedLocations) world.unlockedLocations=["fishing_hole","lazy_brook","big_lake","old_pier","coastal_waters","dads_island"];
     for(const id of ["fishing_hole","lazy_brook","big_lake","old_pier","coastal_waters"]){ if(!world.unlockedLocations.includes(id)) world.unlockedLocations.push(id); }
-    if(!world.location || !locations[world.location]) world.location="fishing_hole";
+    if(!world.location || !locations[world.location] || locations[world.location].debugOnly) world.location="fishing_hole";
     if(typeof world.seasonsCompleted!=="number") world.seasonsCompleted=0;
     if(typeof world.year!=="number") world.year=1;
     if(typeof world.introSeen!=="boolean") world.introSeen=true;
@@ -127,3 +129,4 @@ function prestigeResetWithAmulet(){
   localStorage.removeItem(SAVE_KEY);
   location.reload();
 }
+
