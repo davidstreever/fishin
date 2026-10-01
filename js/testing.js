@@ -11,6 +11,7 @@ function setTestingMode(enabled){
     return;
   }
   if(enabled){
+    saveGame();
     testingSnapshot=cloneTestingData({world,player,logs:gameLogEntries,logIdCounter,catchIdCounter,debugSpecifyFish,debugFishStats,debugForcedFishId});
     resetFishing();
     debugTestingMode=true;debugSpecifyFish=true;debugFishStats=true;
