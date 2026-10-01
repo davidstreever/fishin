@@ -17,6 +17,7 @@ const NEWSPAPER_CONTENT = {
 };
 
 const locations = {
+  testing_zone:{id:"testing_zone",name:"Testing Waters",waterType:"testing",description:"All species. Forced encounters. Normal bite and fight rules.",availableDepths:["shallow","mid","deep"],starterDepthOdds:{shallow:1},encounterRates:{fish:1,nothing:0,junk:0},requiresTruck:false,requiresBoat:false,storyLocked:false,debugOnly:true},
   fishing_hole: {
     id:"fishing_hole", name:"The Fishing Hole", waterType:"freshwater",
     description:"Freshwater. Easy access. Too many anglers.",
@@ -230,3 +231,4 @@ const seasonalWeatherTables = {
   Summer:[{weather:"summerClear",weight:40},{weather:"summerMildClear",weight:15},{weather:"summerCloudy",weight:20},{weather:"summerLightRain",weight:15},{weather:"summerRain",weight:10}],
   Fall:[{weather:"fallClear",weight:15},{weather:"fallColdClear",weight:15},{weather:"fallCloudy",weight:30},{weather:"fallMildCloudy",weight:15},{weather:"fallLightRain",weight:15},{weather:"fallRain",weight:10}]
 };
+
