@@ -18,8 +18,11 @@ const newspaperFishingLink=document.getElementById("newspaperFishingLink"),newsp
 const debugFishPanel=document.getElementById("debugFishPanel"),debugFishLocation=document.getElementById("debugFishLocation"),debugFishList=document.getElementById("debugFishList"),debugWeightSlider=document.getElementById("debugWeightSlider"),debugWeightLabel=document.getElementById("debugWeightLabel"),debugForcedSummary=document.getElementById("debugForcedSummary");
 
 
+const debugTestingToggle=document.getElementById("debugTestingToggle");
+
 const DEBUG_WEIGHT_LABELS=["Small","Below Average","Average","Large","Very Large","Trophy Range"];
 function getDebugLocationFish(){
+  if(debugTestingMode)return fishTypes;
   const base=locationFishWeights[world.location]||{};
   return fishTypes.filter(f=>(base[f.id]||0)>0);
 }
@@ -38,15 +41,15 @@ function renderDebugFishSelector(){
   for(const fish of possible){
     const b=document.createElement("button");b.type="button";b.className="debugFishChoice"+(fish.id===debugForcedFishId?" active":"");
     const name=document.createElement("span");name.textContent=fish.name;
-    const rarity=document.createElement("span");rarity.className="debugFishRarity";rarity.textContent=(fish.rarity||"common").replace(/_/g," ");
+    const rarity=document.createElement("span");rarity.className="debugFishRarity";rarity.textContent=(debugTestingMode?fish.waterType+" · ":"")+(fish.rarity||"common").replace(/_/g," ");
     b.append(name,rarity);b.addEventListener("click",()=>{debugForcedFishId=fish.id;renderDebugFishSelector();});debugFishList.appendChild(b);
   }
   debugWeightSlider.value=String(debugWeightClass);debugWeightLabel.textContent=DEBUG_WEIGHT_LABELS[debugWeightClass]||DEBUG_WEIGHT_LABELS[2];
   const selected=fishTypes.find(f=>f.id===debugForcedFishId);
   debugForcedSummary.textContent=selected?"Forcing: "+selected.name+" • "+debugWeightLabel.textContent+"\nNormal bite/fight rules remain active.":"No fish available here.";
 }
-function addLog(type,text){ logIdCounter++; gameLogEntries.push({id:logIdCounter,type,text,season:world.season,day:world.seasonDay,time:getTimeLabel()}); renderGameLog(); }
-function renderGameLog(){ gameLog.innerHTML=""; for(const entry of [...gameLogEntries].reverse()){ const row=document.createElement("div");row.className="logEntry"+(entry.type==="world"?" logWorld":""); const t=document.createElement("span");t.className="logTime";t.textContent="["+entry.season+" "+entry.day+" / "+entry.time+"]"; const x=document.createElement("span");x.textContent=entry.text; row.append(t,x); gameLog.appendChild(row);} }
+function addLog(type,text,details){ logIdCounter++; gameLogEntries.push({id:logIdCounter,type,text,season:world.season,day:world.seasonDay,time:getTimeLabel(),...(details?{testResult:details}:{})}); renderGameLog(); }
+function renderGameLog(){ gameLog.innerHTML=""; for(const entry of [...gameLogEntries].reverse()){ const row=document.createElement("div");row.className="logEntry"+(entry.type==="world"?" logWorld":"")+(entry.type==="test"?" logTest":""); const t=document.createElement("span");t.className="logTime";t.textContent="["+entry.season+" "+entry.day+" / "+entry.time+"]"; const x=document.createElement("span");x.textContent=entry.text; row.append(t,x); gameLog.appendChild(row);} }
 
 
 function updateDisplays(){
@@ -99,6 +102,7 @@ function updateTimeControls(){
   marketButton.disabled=busy||isWorkDue()||world.period==="Night";
   shopButton.disabled=busy||isWorkDue()||world.period==="Night";
   if(isWorkDue()&&canQuitJob()&&!busy)quitJobButton.style.display="inline-block";
+  if(debugTestingMode){sleepButton.style.display="none";quitJobButton.style.display="none";}
   updateFishingControls();
 }
 function refreshLocationUI(){
@@ -122,6 +126,7 @@ function updateDepthDisplay(){
   });
 }
 function selectDepth(depth){
+  if(debugTestingMode && !["ready","finished"].includes(state))return;
   const loc=locations[world.location];
   if(depth!=="random" && (!loc.availableDepths.includes(depth)||!canTargetDepth(depth)))return;
   player.selectedDepth=depth;updateDepthDisplay();renderGearInventory();saveGame();
@@ -129,6 +134,7 @@ function selectDepth(depth){
 
 function renderLocationTabs(){
   locationTabs.innerHTML="";
+  if(debugTestingMode){if(utilityTabs)utilityTabs.style.display="none";return;}
   const seaLocationIds=["coastal_waters","dads_island"];
   const atSea=seaLocationIds.includes(world.location);
   const atPier=world.location==="old_pier";
@@ -148,6 +154,7 @@ function renderLocationTabs(){
   }
 
   for(const loc of Object.values(locations)){
+    if(loc.debugOnly)continue;
     const seaDestination=seaLocationIds.includes(loc.id);
     if(loc.id==="dads_island"&&!world.storyFlags?.islandUnlocked)continue;
 
@@ -196,7 +203,7 @@ function renderActiveGearControls(){
   const specials=Array.isArray(player.gear.ownedSpecialItems)?player.gear.ownedSpecialItems:[];
   if(specialGearRow)specialGearRow.style.display=specials.length?"grid":"none";
 }
-function selectTackle(id){
+function selectTackle(id){if(debugTestingMode && !["ready","finished"].includes(state))return;
   if(id==="bobber"){player.selectedDepth="random";}
   else {const item=tackleItems[id];if(!item||!hasTackle(id))return;player.selectedDepth=item.id==="adjustable_dual_diver"?(locations[world.location]?.availableDepths?.[0]||"shallow"):item.targetDepth;}
   updateDisplays();renderGearInventory();updateTimeControls();saveGame();
@@ -224,7 +231,7 @@ function renderGearInventory(){
 function repairTruck(){
   const vehicle=vehicles[player.gear.vehicle]||vehicles.old_truck;if(player.gear.vehicleRepaired||player.money<vehicle.repairCost)return;player.money-=vehicle.repairCost;player.gear.vehicleRepaired=true;gainObsession(1,"repairing the truck for fishing");addLog("buy","Repaired the Old Truck for $"+vehicle.repairCost.toFixed(2)+".");message.textContent="The Old Truck coughs, rattles, and finally starts.";updateDisplays();renderGearInventory();renderLocationTabs();renderShopInventory();saveGame();
 }
-function selectBait(name){ if(player.gear.bait[name]<=0)return;player.selectedBait=name;updateDisplays();renderGearInventory();updateTimeControls();saveGame(); }
+function selectBait(name){if(debugTestingMode && !["ready","finished"].includes(state))return; if(player.gear.bait[name]<=0)return;player.selectedBait=name;updateDisplays();renderGearInventory();updateTimeControls();saveGame(); }
 
 function renderShopInventory(){
   shopInventory.innerHTML="";const box=document.createElement("div");box.className="shopBox";
@@ -260,7 +267,7 @@ function makeGearShopRow(type,item){
   const owned=type==="rod"?player.gear.ownedRods.includes(item.id):player.gear.ownedReels.includes(item.id);const equipped=player.gear[type]===item.id;if(equipped){b.textContent="Equipped";b.disabled=true;}else if(owned){b.textContent="Equip";b.addEventListener("click",()=>equipGear(type,item.id));}else{b.textContent="Buy";b.disabled=player.money<item.cost;b.addEventListener("click",()=>buyGear(type,item.id));}row.append(label,price,b);return row;
 }
 function buyGear(type,id){const item=type==="rod"?rods[id]:reels[id];if(!item||player.money<item.cost)return;player.money-=item.cost;(type==="rod"?player.gear.ownedRods:player.gear.ownedReels).push(id);player.gear[type]=id;addLog("buy","Bought "+item.name+" for $"+item.cost.toFixed(2)+".");updateDisplays();renderGearInventory();renderShopInventory();saveGame();}
-function equipGear(type,id){const list=type==="rod"?player.gear.ownedRods:player.gear.ownedReels;if(!list.includes(id))return;player.gear[type]=id;updateDisplays();renderGearInventory();renderShopInventory();saveGame();}
+function equipGear(type,id){if(debugTestingMode && !["ready","finished"].includes(state))return;const list=type==="rod"?player.gear.ownedRods:player.gear.ownedReels;if(!list.includes(id))return;player.gear[type]=id;updateDisplays();renderGearInventory();renderShopInventory();saveGame();}
 
 function buyTruckCreel(){const count=player.gear.truckCreels||0,costs=[15,25,40,60];if(!player.gear.vehicleRepaired||count>=4||player.money<costs[count])return;const cost=costs[count];player.money-=cost;player.gear.truckCreels=count+1;addLog("buy","Bought a truck creel for $"+cost.toFixed(2)+".");shopMessage.textContent="You strap another creel into the truck.";updateDisplays();updateInventoryDisplay();renderGearInventory();renderShopInventory();saveGame();}
 function makeBookShopRow(book){
@@ -672,14 +679,15 @@ document.addEventListener("keydown",e=>{
 });
 document.addEventListener("keyup",e=>{if(e.key==="ArrowUp")stopReeling();if(e.key==="ArrowDown")stopPressure();});
 
-debugResetButton.addEventListener("click",()=>{if(confirm("Delete the Fishin' save and start over?"))deleteSave();});
+debugResetButton.addEventListener("click",()=>{if(debugTestingMode){message.textContent="Turn off Testing Mode before resetting your save.";return;}if(confirm("Delete the Fishin' save and start over?"))deleteSave();});
 debugAddBaitButton.addEventListener("click",()=>{Object.keys(player.gear.bait).forEach(name=>player.gear.bait[name]+=12);addLog("world","DEBUG: Added 12 of every bait.");renderGearInventory();updateDisplays();saveGame();});
 debugAddMoneyButton.addEventListener("click",()=>{player.money+=100;addLog("world","DEBUG: Added $100.");updateDisplays();renderGearInventory();renderShopInventory();saveGame();});
 debugTravelToggle.addEventListener("change",()=>{debugInstantTravel=debugTravelToggle.checked;renderLocationTabs();message.textContent=debugInstantTravel?"Debug instant travel enabled.":"";});
 debugFightMetersToggle.addEventListener("change",()=>{debugFightMeters=debugFightMetersToggle.checked;if(typeof renderDebugFightMeters==="function")renderDebugFightMeters();});
 tensionViewSelect.addEventListener("change",()=>{if(typeof drawTensionGrid==="function")drawTensionGrid();});
 debugFishStatsToggle.addEventListener("change",()=>{debugFishStats=debugFishStatsToggle.checked;if(typeof renderDebugFightMeters==="function")renderDebugFightMeters();});
-debugSpecifyFishToggle.addEventListener("change",()=>{debugSpecifyFish=debugSpecifyFishToggle.checked;renderDebugFishSelector();message.textContent=debugSpecifyFish?"Debug fish selection enabled.":"";});
+debugTestingToggle.addEventListener("change",()=>setTestingMode(debugTestingToggle.checked));
+debugSpecifyFishToggle.addEventListener("change",()=>{debugSpecifyFish=debugTestingMode||debugSpecifyFishToggle.checked;renderDebugFishSelector();message.textContent=debugSpecifyFish?"Debug fish selection enabled.":"";});
 debugWeightSlider.addEventListener("input",()=>{debugWeightClass=Number(debugWeightSlider.value);renderDebugFishSelector();});
 debugWeatherSelect.addEventListener("change",()=>{const c=debugWeatherSelect.value;if(!c)return;setDebugWeather(c);debugWeatherSelect.value="";updateDisplays();startEnvironmentAnimations();saveGame();});
 debugMoonSelect.addEventListener("change",()=>{debugMoonPhase=debugMoonSelect.value===""?null:Number(debugMoonSelect.value);skyFrame=0;renderSky();});
@@ -699,3 +707,4 @@ state="ready";
 refreshLocationUI();updateDisplays();updateInventoryDisplay();renderGearInventory();renderShopInventory();resetFishing();startEnvironmentAnimations();
 if(!world.introSeen) showIntroStep(1);
 setInterval(saveGame,5000);
+
