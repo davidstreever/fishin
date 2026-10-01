@@ -100,7 +100,7 @@ function isFishOffDepth(fish,actualDepth){ return getPrimaryDepth(fish)!==actual
 function getDebugForcedFish(){
   if(!debugSpecifyFish||!debugForcedFishId)return null;
   const base=locationFishWeights[world.location]||{};
-  if((base[debugForcedFishId]||0)<=0)return null;
+  if(!debugTestingMode && (base[debugForcedFishId]||0)<=0)return null;
   return fishTypes.find(f=>f.id===debugForcedFishId)||null;
 }
 function generateDebugWeight(fish,weightClass=2){
@@ -125,6 +125,7 @@ function setupEncounterForCurrentCast(){
     currentOffDepth=forcedFish?false:(currentCastProfile.forcedOffDepth||isFishOffDepth(currentFish,currentCastProfile.depth));
     currentWeight=forcedFish?generateDebugWeight(currentFish,debugWeightClass):generateFishWeight(currentFish,currentOffDepth);
     nibbleDepth=calculateNibbleDepth(currentWeight);
+    beginTestingEncounter();
   }else if(currentEncounterType==="junk") currentJunk=pickJunk();
 }
 
@@ -133,6 +134,7 @@ let currentCastProfile={depth:"shallow",speciesDepth:"shallow",forcedOffDepth:fa
 function castLine(){
   clearFishingTimers();
   if(isWorkDue() || isSleepChoice()){ updateTimeControls(); return; }
+  if(debugTestingMode)player.inventory.length=0;
   if(player.inventory.length>=getInventoryLimit()){ message.textContent="Your creel is full."; updateTimeControls(); return; }
   if(player.gear.bait[player.selectedBait]<=0){ message.textContent="You're out of "+player.selectedBait.toLowerCase()+"s."; updateTimeControls(); return; }
   state="casting";currentCastProfile=determineCastProfile();currentDepth=currentCastProfile.depth;setupEncounterForCurrentCast();
@@ -306,20 +308,21 @@ function restartWaitingAfterFish(extraDelay=0){
   },700);
 }
 function fishLeaves(){
-  if(fishHasLeft)return;fishHasLeft=true;clearTimeout(nibbleTimer);clearTimeout(biteTimer);message.textContent="The fish moved on.";player.pub.fishMovedOnCount=(player.pub.fishMovedOnCount||0)+1;disturbance=Math.max(0,disturbance-1);restartWaitingAfterFish();
+  if(fishHasLeft)return;recordTestingResult("moved_on","Fish left during nibbling.");fishHasLeft=true;clearTimeout(nibbleTimer);clearTimeout(biteTimer);message.textContent="The fish moved on.";player.pub.fishMovedOnCount=(player.pub.fishMovedOnCount||0)+1;disturbance=Math.max(0,disturbance-1);restartWaitingAfterFish();
 }
 function fishSpooked(){
-  if(fishHasLeft)return;fishHasLeft=true;clearTimeout(nibbleTimer);clearTimeout(biteTimer);message.textContent="You spooked the fish.";addLog("fishing","You spooked the fish.");restartWaitingAfterFish(1000);
+  if(fishHasLeft)return;recordTestingResult("spooked","Fish spooked before hooking.");fishHasLeft=true;clearTimeout(nibbleTimer);clearTimeout(biteTimer);message.textContent="You spooked the fish.";addLog("fishing","You spooked the fish.");restartWaitingAfterFish(1000);
 }
 
 function pullUpAtNibble(){if(state!=="nibble"&&state!=="bite")return;clearTimeout(biteTimer);addLostFishLog();state="retracting";pullUpButton.style.display="none";message.textContent="";retractLine();}
 function earlyPull(){if(state!=="waiting")return;clearTimeout(nibbleTimer);if(currentFish)addLostFishLog();state="retracting";pullUpButton.style.display="none";message.textContent="";retractLine();}
-function addLostFishLog(){gainObsession(obsessionForLoss(currentWeight),"the one that got away");addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb.");}
+function addLostFishLog(){recordTestingResult("pulled_up","Pulled up before hooking.");gainObsession(obsessionForLoss(currentWeight),"the one that got away");addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb.");}
 function retractLine(){fishButton.disabled=true;lineTimer=setInterval(()=>{lineDepth--;drawLine();if(lineDepth<=0){clearInterval(lineTimer);resetFishing();}},100);}
 
 function fishBites(){if(state!=="nibble")return;state="bite";message.textContent="BITE!";updateFishingControls();clearTimeout(biteTimer);biteTimer=setTimeout(missHook,currentFish.hookWindow);}
 function hookFish(){if(state!=="bite")return;clearTimeout(biteTimer);clearInterval(disturbanceTimer);pullUpButton.style.display="none";consumeBait();startFight();}
 function missHook(){
+  if(state==="bite")recordTestingResult("missed_hook","Hook window expired.");
   if(state!=="bite")return;gainObsession(obsessionForLoss(currentWeight),"missed big fish");clearInterval(disturbanceTimer);pullUpButton.style.display="none";consumeBait();state="finished";
   addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb. Missed the hook.");message.textContent="You lost the fish.";hint.textContent="You missed the hook.\nYour bait is gone too.";finishFishingFailure();
 }
@@ -377,6 +380,7 @@ function chooseFightEffort(profile,staminaPercent,fullStrength=false){
   return clamp(raw,0.28,1);
 }
 function startFight(){
+  if(testingEncounter)testingEncounter.hooked=true;
   state="reeling";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;startingDistance=nibbleDepth;fishDistance=startingDistance;maxFightDistance=startingDistance*1.75;fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fightEffort=0;fightEffortBand="rest";debugLastFightCheck="—";debugLastContinueCheck="—";
   const profile=currentFish.fightProfile || {staminaMultiplier:1,aggression:0.55,staminaDrain:0.9};
   maxFishStamina=(70+currentWeight*8+currentFish.fightPower*15)*profile.staminaMultiplier;fishStamina=maxFishStamina;fightCooldown=0.45;fightRemaining=0;
@@ -414,6 +418,7 @@ function fightTick(){
   if(state!=="reeling")return;
   const dt=0.1;
   fightElapsed+=dt;
+  trackTestingInput(dt);
   const rod=getEquippedRod();
   const reel=getEquippedReel();
   const profile=currentFish.fightProfile || {staminaMultiplier:1,aggression:0.55,staminaDrain:0.9};
@@ -616,6 +621,7 @@ function updateAllTimeBest(fish,weight){
 }
 
 function landFish(){
+  recordTestingResult("caught","Landed the fish.");
   clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";catchIdCounter++;
   const trophy=isTrophyFish(currentFish,currentWeight);if(trophy)player.pub.unacknowledgedTrophy=true;const value=currentWeight*currentFish.valuePerPound*(trophy?TROPHY_VALUE_MULTIPLIER:1);
   const rec={id:catchIdCounter,speciesId:currentFish.id,name:currentFish.name,weight:currentWeight,baseValue:value,status:"kept",caughtAt:new Date(),location:world.location,weather:getCurrentWeatherTags(),season:world.season,day:world.seasonDay,time:getTimeLabel(),bait:player.selectedBait,depth:currentDepth,offDepth:currentOffDepth,trophy};
@@ -633,7 +639,7 @@ You caught a trophy ${currentFish.name}!`:"You caught a "+currentFish.name+"!";h
   if(trophy){fishButton.disabled=true;pullUpButton.style.display="none";sleepButton.disabled=true;marketButton.disabled=true;shopButton.disabled=true;}
   saveGame();if(!trophy&&!isWorkDue()&&!isSleepChoice())fishButton.textContent="Cast Again";resetTimer=setTimeout(()=>{if(state==="finished")resetFishing();},trophy?3400:2200);
 }
-function loseFish(reason){if(reason==="The line snaps." && fishFighting)player.pub.lineBrokenDuringSurge=true;gainObsession(obsessionForLoss(currentWeight),"big loss");clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb. "+reason);message.textContent="You lost the fish.";hint.textContent=reason+"\nYour bait is gone too.";finishFishingFailure();}
+function loseFish(reason){recordTestingResult("lost",reason);if(reason==="The line snaps." && fishFighting)player.pub.lineBrokenDuringSurge=true;gainObsession(obsessionForLoss(currentWeight),"big loss");clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb. "+reason);message.textContent="You lost the fish.";hint.textContent=reason+"\nYour bait is gone too.";finishFishingFailure();}
 function finishFishingFailure(){lineDepth=0;drawLine();updateTimeControls();saveGame();if(!isWorkDue()&&!isSleepChoice())fishButton.textContent="Cast Again";resetTimer=setTimeout(()=>{if(state==="finished")resetFishing();},1800);}
 
 function chooseFish(depth){
@@ -659,6 +665,7 @@ function chooseFish(depth){
 function calculateNibbleDepth(weight){const base=5;let pull=Math.round(Math.min(weight,8))+randomNumber(-1,1);return Math.max(base,Math.min(12,base+pull));}
 function drawLine(){line.innerHTML="";for(let i=0;i<lineDepth;i++){const dot=document.createElement("span");dot.className="lineDot";dot.textContent="•";line.appendChild(dot);}}
 function resetFishing(){
+  recordTestingResult("aborted","Encounter reset before completion.");
   clearFishingTimers();state="ready";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;tension=0;baselineTension=0;fightEffort=0;fightEffortBand="rest";fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fishStamina=100;maxFishStamina=100;surgeStartStaminaPercent=1;debugLastFightCheck="—";debugLastContinueCheck="—";lineDepth=0;currentFish=null;currentWeight=0;currentEncounterType=null;currentJunk=null;currentOffDepth=false;nibbleCount=0;successfulTwitches=0;twitchPrimed=false;pendingNervousnessMultiplier=1;disturbance=0;lastNibbleAt=0;fishHasLeft=false;
   fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";pullUpButton.style.display="none";drawLine();message.textContent="";hint.textContent="";renderCreel();renderGearInventory();updateDisplays();updateTimeControls();if(typeof updateDepthDisplay==="function")updateDepthDisplay();
 }
@@ -666,3 +673,4 @@ function clearFishingTimers(){clearInterval(lineTimer);clearInterval(fightTimer)
 function randomNumber(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
 function randomDecimal(min,max){return Math.random()*(max-min)+min;}
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+

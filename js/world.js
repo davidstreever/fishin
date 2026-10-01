@@ -23,14 +23,15 @@ function getCalendarLabel(){
   return world.season+", Day "+world.seasonDay+", Year "+world.year+" — "+getWeekday()+" — "+getTimeLabel();
 }
 
-function isWorkDue(){ return player.job.employed && !isWeekend() && world.period==="Morning" && world.timeUnits>=getPeriodLimit(); }
-function isSleepChoice(){ return world.period==="Night" && !world.nightFishing; }
+function isWorkDue(){ if(debugTestingMode)return false; return player.job.employed && !isWeekend() && world.period==="Morning" && world.timeUnits>=getPeriodLimit(); }
+function isSleepChoice(){ if(debugTestingMode)return false; return world.period==="Night" && !world.nightFishing; }
 function canNightFish(){ return !player.job.employed || (isWeekend() && player.meta.obsession>=10); }
 function canQuitJob(){ return player.job.employed && player.meta.obsession>=35 && (world.seasonsCompleted>=2 || player.meta.hasAmulet); }
 function hasSleepDebt(){ return player.condition.nightsSkipped>0 || player.condition.fatigue>=2; }
 function isNightComplete(){ return world.period==="Night" && world.nightFishing && world.timeUnits>=getPeriodLimit(); }
 
 function advanceFishingTime(){
+  if(debugTestingMode)return;
   world.timeUnits++;
 
   if(world.period==="Night" && world.nightFishing){
@@ -195,6 +196,7 @@ function advanceSeason(){
 
 
 function goToFishingLocation(locationId){
+  if(debugTestingMode || locations[locationId]?.debugOnly)return;
   if(state!=="ready" && state!=="finished") return;
   const loc=locations[locationId];
   if(!loc) return;
@@ -242,3 +244,4 @@ function returnToFishing(){
   marketPanel.style.display="none"; shopPanel.style.display="none"; journalPanel.style.display="none"; if(typeof pubPanel!=="undefined"&&pubPanel)pubPanel.style.display="none"; if(typeof newspaperPanel!=="undefined"&&newspaperPanel)newspaperPanel.style.display="none"; pierPanel.style.display="block"; topNav.style.display="flex";
   refreshLocationUI(); resetFishing(); updateDisplays(); updateInventoryDisplay(); renderGearInventory(); startEnvironmentAnimations(); saveGame();
 }
+
