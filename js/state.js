@@ -91,6 +91,7 @@ let debugInstantTravel = false;
 let debugFightMeters = false;
 let debugFishStats = false;
 let debugSpecifyFish = false;
+let debugTestingMode = false;
 let debugWaterMotion = null;
 let debugMoonPhase = null;
 let debugForcedFishId = null;
@@ -146,3 +147,4 @@ let activeSpecialAbility = null;
 let forcedSurgeMultiplier = 1;
 let quickRecoveryUsed = false;
 let lastGaspUsed = false;
+
