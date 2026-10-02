@@ -157,19 +157,34 @@ const dayTimes={Dawn:1.20,"Early Morning":1.15,"Mid Morning":1.0,"Late Morning":
 const nightTimes={Dawn:1.15,"Early Morning":0.8,"Mid Morning":0.75,"Late Morning":0.7,Noon:0.65,"Early Afternoon":0.7,"Late Afternoon":0.9,"Early Evening":1.05,Twilight:1.25,Sunset:1.25,Midnight:1.2,"Deep Night":1.3};
 const offshoreTimes={Dawn:1.1,"Early Morning":1.0,"Mid Morning":1.0,"Late Morning":1.0,Noon:1.0,"Early Afternoon":1.0,"Late Afternoon":1.0,"Early Evening":1.05,Twilight:1.1,Sunset:1.05,Midnight:0.95,"Deep Night":0.95};
 
+// Freshwater playtest profiles: tuned to whole-encounter departure odds without Twitch.
+// Keep shared profiles and Brook Trout unchanged; saltwater uses the original profiles.
+const freshwaterNibbleProfiles = {
+  pumpkinseed:{baseBite:0.65,biteGrowth:0.12,baseNervousness:0.51,nervousnessGrowth:0.05,twitchResponse:0.3},
+  yellow_perch:{baseBite:0.4,biteGrowth:0.12,baseNervousness:0.35,nervousnessGrowth:0.1,twitchResponse:0.4},
+  chain_pickerel:{baseBite:0.35,biteGrowth:0.12,baseNervousness:0.63,nervousnessGrowth:0.12,twitchResponse:0.6},
+  smallmouth_bass:{baseBite:0.4,biteGrowth:0.12,baseNervousness:0.57,nervousnessGrowth:0.1,twitchResponse:0.6},
+  largemouth_bass:{baseBite:0.3,biteGrowth:0.12,baseNervousness:0.54,nervousnessGrowth:0.12,twitchResponse:0.7},
+  white_perch:{baseBite:0.4,biteGrowth:0.12,baseNervousness:0.57,nervousnessGrowth:0.1,twitchResponse:0.4},
+  landlocked_salmon:{baseBite:0.25,biteGrowth:0.1,baseNervousness:0.45,nervousnessGrowth:0.12,twitchResponse:0.7},
+  lake_trout:{baseBite:0.35,biteGrowth:0.12,baseNervousness:0.52,nervousnessGrowth:0.1,twitchResponse:0.7},
+  cusk_fresh:{baseBite:0.45,biteGrowth:0.12,baseNervousness:0.61,nervousnessGrowth:0.1,twitchResponse:0.6},
+  arctic_charr:{baseBite:0.55,biteGrowth:0.12,baseNervousness:0.73,nervousnessGrowth:0.08,twitchResponse:0.4}
+};
+
 const fishTypes = [
   // Freshwater
-  fishDef("pumpkinseed","Pumpkinseed","freshwater",0.15,1.25,1.05,2.20,0.55,{shallow:1.00,mid:0.20,deep:0.03},"common",{"Worm":1.8,"Minnow":0.5,"Insect":1.7,"Grub":1.4},["SUN","HOT"],["Spring","Summer"],dayTimes,veryEager,2200),
-  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.90,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,eager,1950,["quick_reaction"]),
-  fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,2.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,normalNibble,1650,["feint"]),
+  fishDef("pumpkinseed","Pumpkinseed","freshwater",0.15,1.25,1.05,2.20,0.55,{shallow:1.00,mid:0.20,deep:0.03},"common",{"Worm":1.8,"Minnow":0.5,"Insect":1.7,"Grub":1.4},["SUN","HOT"],["Spring","Summer"],dayTimes,freshwaterNibbleProfiles.pumpkinseed,2200),
+  fishDef("yellow_perch","Yellow Perch","freshwater",0.35,2.4,1.9,3.00,1.90,{shallow:0.70,mid:1.00,deep:0.35},"common",{"Worm":1.6,"Minnow":1.3,"Insect":1.4,"Grub":1.5},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,freshwaterNibbleProfiles.yellow_perch,1950,["quick_reaction"]),
+  fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,2.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,freshwaterNibbleProfiles.chain_pickerel,1650,["feint"]),
   fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,2.30,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,brookTroutNibble,1700,["quick_recovery"]),
-  fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,2.50,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,normalNibble,1600),
-  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,2.80,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,cautious,1600,["last_gasp"]),
-  fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,2.20,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,eager,1850,["quick_reaction"]),
-  fishDef("landlocked_salmon","Landlocked Salmon","freshwater",1.0,12.0,8.5,6.50,3.00,{shallow:0.10,mid:1.00,deep:0.65},"uncommon",{"Worm":0.7,"Minnow":1.9,"Insect":1.0,"Grub":0.8},["COLD","SHADE"],["Spring","Fall"],dayTimes,cautious,1500),
-  fishDef("lake_trout","Lake Trout","freshwater",1.5,25.0,16.0,6.75,2.50,{shallow:0.02,mid:0.25,deep:1.00},"uncommon",{"Worm":0.6,"Minnow":1.9,"Insect":0.6,"Grub":0.7},["COLD"],["Spring","Fall"],offshoreTimes,cautious,1450),
-  fishDef("cusk_fresh","Cusk","freshwater",0.75,15.0,9.0,4.50,1.65,{shallow:0.02,mid:0.20,deep:1.00},"uncommon",{"Worm":1.2,"Minnow":1.6,"Insect":0.7,"Grub":1.0},["COLD","SHADE"],["Spring","Fall"],nightTimes,normalNibble,1700),
-  fishDef("arctic_charr","Arctic Charr","freshwater",0.5,6.5,5.0,9.00,1.45,{shallow:0.01,mid:0.10,deep:1.00},"ultra_rare",{"Worm":0.9,"Minnow":1.6,"Insect":1.5,"Grub":1.2},["COLD"],["Spring","Fall"],offshoreTimes,eager,1450),
+  fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,2.50,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,freshwaterNibbleProfiles.smallmouth_bass,1600),
+  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,2.80,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,freshwaterNibbleProfiles.largemouth_bass,1600,["last_gasp"]),
+  fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,2.20,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,freshwaterNibbleProfiles.white_perch,1850,["quick_reaction"]),
+  fishDef("landlocked_salmon","Landlocked Salmon","freshwater",1.0,12.0,8.5,6.50,3.00,{shallow:0.10,mid:1.00,deep:0.65},"uncommon",{"Worm":0.7,"Minnow":1.9,"Insect":1.0,"Grub":0.8},["COLD","SHADE"],["Spring","Fall"],dayTimes,freshwaterNibbleProfiles.landlocked_salmon,1500),
+  fishDef("lake_trout","Lake Trout","freshwater",1.5,25.0,16.0,6.75,2.50,{shallow:0.02,mid:0.25,deep:1.00},"uncommon",{"Worm":0.6,"Minnow":1.9,"Insect":0.6,"Grub":0.7},["COLD"],["Spring","Fall"],offshoreTimes,freshwaterNibbleProfiles.lake_trout,1450),
+  fishDef("cusk_fresh","Cusk","freshwater",0.75,15.0,9.0,4.50,1.65,{shallow:0.02,mid:0.20,deep:1.00},"uncommon",{"Worm":1.2,"Minnow":1.6,"Insect":0.7,"Grub":1.0},["COLD","SHADE"],["Spring","Fall"],nightTimes,freshwaterNibbleProfiles.cusk_fresh,1700),
+  fishDef("arctic_charr","Arctic Charr","freshwater",0.5,6.5,5.0,9.00,1.45,{shallow:0.01,mid:0.10,deep:1.00},"ultra_rare",{"Worm":0.9,"Minnow":1.6,"Insect":1.5,"Grub":1.2},["COLD"],["Spring","Fall"],offshoreTimes,freshwaterNibbleProfiles.arctic_charr,1450),
 
   // Saltwater
   fishDef("atlantic_mackerel","Atlantic Mackerel","saltwater",0.4,4.5,3.4,2.75,1.05,{shallow:1,mid:0.55},"common",{"Shrimp":1.2,"Squid":1.6,"Crab":0.4,"Cut Bait":1.1},["SUN","MILD"],["Spring","Summer","Fall"],dayTimes,eager,1900),

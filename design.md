@@ -75,3 +75,8 @@ This file records durable decisions for Fishin'. The current files in this folde
 - A Spring Year 1 report about Dad's death or disappearance should be mundane. The reporter should not insert overt supernatural clues; ordinary facts gain meaning later.
 - Use no conventional soundtrack. Future audio should rely on small environmental layers and fishing one-shots. As obsession grows, ordinary sounds may rarely behave incorrectly, without becoming a supernatural soundtrack.
 
+
+## Freshwater nibble playtest — October 2, 2026
+
+- Species-specific nibble profiles target approximate no-Twitch departures per encounter: Pumpkinseed 1%, Yellow Perch 6.5%, Pickerel 15%, Smallmouth 10%, Largemouth 17.5%, White Perch 10%, Salmon 22.5%, Lake Trout 12.5%, Cusk 7.5%, Charr 4%. Brook Trout remains unchanged at about 42%. These are calculated targets, not raw nervousness values or observed success rates.
+- Preserve the free first nibble, existing bite-before-leave formula, Twitch mechanics, fight balance, and saltwater profiles. Playtest both waiting and well-timed Twitch. Departures are already included in Testing Waters logs.
