@@ -27,6 +27,8 @@ This file records durable decisions for Fishin'. The current files in this folde
 - The Old Timer should suggest upgrading fishing gear by fall, or sooner after the player first breaks a line while fighting a bass. Make it a contextual, one-time hint rather than a repeated reminder.
 - The line is the primary fight visualization. A tension display should answer how close the line is to breaking: weight sets its baseline, surges move it toward danger, rest lets it settle, and its maximum means imminent failure.
 
+- White Perch playtest target: on T2, feel about as demanding as Yellow Perch on T1. Test aggression 0.62 and stamina multiplier 0.90; retain fighting power 2.2, stamina drain 1.10, and shared Quick Reaction. Keep nervousness tuning separate.
+
 ## Current playtest observations
 
 - In a clean T1 playthrough, the player bought the Maine Fishing Atlas and repaired the truck in time to explore other spots by summer; that progression felt good.
