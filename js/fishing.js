@@ -333,6 +333,7 @@ function tryStartFeint(staminaPercent){
   const ability=specialAbilities.feint;
   if(!fishHasSpecialAbility("feint")||staminaPercent<0.50||Math.random()>=ability.triggerChance)return false;
   activeSpecialAbility="feint";
+  fishSteadyResistance=false;
   fightRecoveryLeft=true;
   fightSwingTargetTimer=ability.restDuration;
   forcedSurgeMultiplier=ability.followupSurgeMultiplier;
@@ -370,6 +371,27 @@ function getEffortBand(effort){
   if(effort<0.80)return "active";
   return "strong";
 }
+const STEADY_RETRIEVAL_MULTIPLIER=0.55;
+function getTrueRestChance(){
+  const staminaPercent=maxFishStamina>0?clamp(fishStamina/maxFishStamina,0,1):0;
+  return 0.15+0.70*(1-staminaPercent);
+}
+function chooseFightQuietState(){
+  // Fresh fish usually keep resisting between pulls. Tired fish more often
+  // take a true rest, giving full retrieval and a little stamina recovery.
+  fishSteadyResistance=Math.random()>=getTrueRestChance();
+  fightEffortBand=fishSteadyResistance?"steady":"rest";
+}
+function startFightPause(){
+  fightCooldown=getNextFightDelay();
+  chooseFightQuietState();
+}
+function getFightState(){
+  return fishFighting?fightEffortBand:fishSteadyResistance?"steady":"rest";
+}
+function getFightStateLabel(){
+  return fishFighting?fightEffortBand.toUpperCase()+" PULL":fishSteadyResistance?"STEADY RESISTANCE":"RESTING";
+}
 function chooseFightEffort(profile,staminaPercent,fullStrength=false){
   if(fullStrength)return 1;
   const aggression=clamp(profile.aggression ?? 0.55,0,1);
@@ -386,6 +408,8 @@ function startFight(){
   maxFishStamina=(70+currentWeight*8+currentFish.fightPower*15)*profile.staminaMultiplier;fishStamina=maxFishStamina;fightCooldown=0.45;fightRemaining=0;
   baselineTension=getBaselineTension();
   tension=baselineTension;
+  fishSteadyResistance=false;fightSteadySeconds=0;fightRestSeconds=0;
+  chooseFightQuietState();
   if(fishHasSpecialAbility("quick_reaction") && Math.random()<(specialAbilities.quick_reaction?.chance ?? 0.98)){
     // Perch's signature opening run should last long enough that starter gear
     // cannot simply reel through it.
@@ -402,6 +426,7 @@ function startSurge(profile,multiplier=1,fullStrength=false,effortOverride=null)
   fightEffort=clamp(baseEffort*multiplier,0.28,1.25);
   fightEffortBand=getEffortBand(fightEffort);
   fishFighting=true;
+  fishSteadyResistance=false;
   fightRemaining=getFightDuration()*(0.88+Math.min(1,fightEffort)*0.24);
   if(fishHasSpecialAbility("endurance_fighter"))fightRemaining*=specialAbilities.endurance_fighter.surgeDurationMultiplier;
   forcedSurgeMultiplier=1;
@@ -435,15 +460,15 @@ function fightTick(){
     if(fightRemaining<=0 || fishStamina<=0){
       fishFighting=false;fightEffort=0;fightEffortBand="rest";
       const sp=maxFishStamina>0?fishStamina/maxFishStamina:0;
-      if(tryQuickRecovery(sp)){fightCooldown=getNextFightDelay();}
+      if(tryQuickRecovery(sp)){startFightPause();}
       else if(tryStartFeint(sp)){/* feint controls its own rest window */}
-      else {fightCooldown=getNextFightDelay();if(sp<0.35){fightRecoveryLeft=true;fightSwingTargetTimer=0.65;}}
+      else {startFightPause();if(sp<0.35){fightRecoveryLeft=true;fightSwingTargetTimer=0.65;}}
     }
   }else if(fightRecoveryLeft){
-    // Rest gives every fish a very small recovery. Feint uses the same quiet
-    // presentation, then breaks into its special follow-up run.
-    fishStamina=clamp(fishStamina+maxFishStamina*0.0075*dt,0,maxFishStamina);
-    fightEffort=0;fightEffortBand="rest";
+    // Feint remains a true false-rest window. Ordinary tired-fish pauses use
+    // their selected quiet state; only true rests recover stamina.
+    if(!fishSteadyResistance)fishStamina=clamp(fishStamina+maxFishStamina*0.0075*dt,0,maxFishStamina);
+    fightEffort=0;fightEffortBand=fishSteadyResistance?"steady":"rest";
     fightSwingTargetTimer=Math.max(0,fightSwingTargetTimer-dt);
     if(fightSwingTargetTimer<=0){
       fightRecoveryLeft=false;
@@ -453,10 +478,10 @@ function fightTick(){
       }
     }
   }else{
-    // Ordinary rests recover only a sliver of stamina; fights still trend
-    // toward exhaustion overall.
-    fishStamina=clamp(fishStamina+maxFishStamina*0.0075*dt,0,maxFishStamina);
-    fightEffort=0;fightEffortBand="rest";
+    // A pause can be steady resistance or a true rest. Resistance does not
+    // add tension or recover stamina; rest recovers only a sliver.
+    if(!fishSteadyResistance)fishStamina=clamp(fishStamina+maxFishStamina*0.0075*dt,0,maxFishStamina);
+    fightEffort=0;fightEffortBand=fishSteadyResistance?"steady":"rest";
     fightCooldown-=dt;
     if(fightCooldown<=0){
       const sp=maxFishStamina>0?fishStamina/maxFishStamina:0;
@@ -464,9 +489,9 @@ function fightTick(){
         const chance=aggressionFightChance(profile,sp);
         const roll=Math.random();
         const fights=fishStamina>0 && roll<chance;
-        debugLastFightCheck=(roll*100).toFixed(1)+"% vs "+(chance*100).toFixed(1)+"% AGGRESSION → "+(fights?"FIGHT":"REST");
         if(fights)startSurge(profile);
-        else fightCooldown=getNextFightDelay();
+        else startFightPause();
+        debugLastFightCheck=(roll*100).toFixed(1)+"% vs "+(chance*100).toFixed(1)+"% AGGRESSION → "+(fights?"FIGHT":fishSteadyResistance?"STEADY RESISTANCE":"REST");
       }
     }
   }
@@ -490,10 +515,10 @@ function fightTick(){
       tension+=(20+currentWeight*4.2)*currentFish.fightPower*effortPower*rod.tensionMultiplier*dt;
       fishDistance+=(runRate-fightingReelRate)*dt;
     }else{
-      // Reeling during rest adds no tension of its own. Any tension left by a
-      // surge settles toward the persistent weight-derived baseline.
+      // Both quiet states are safe to reel. Steady resistance limits progress;
+      // a true rest gives full retrieval. Neither adds surge/reel tension.
       tension-=13*dt;
-      fishDistance-=restReelRate*dt;
+      fishDistance-=restReelRate*(fishSteadyResistance?STEADY_RETRIEVAL_MULTIPLIER:1)*dt;
     }
   }else if(isHoldingPressure && fishFighting){
     // Hold Pressure makes the fish work while protecting the line.
@@ -513,6 +538,10 @@ function fightTick(){
   // tension, but it cannot make a heavy fish feel weightless.
   tension=clamp(Math.max(baselineTension,tension),0,100);
   fishDistance=Math.max(0,fishDistance);
+  if(!fishFighting){
+    if(fishSteadyResistance)fightSteadySeconds+=dt;
+    else fightRestSeconds+=dt;
+  }
   if(tension>=100){loseFish("The line snaps.");return;}
   if(fishDistance>=maxFightDistance){
     fishDistance=maxFightDistance;
@@ -534,7 +563,13 @@ function getFightDuration(){
   const base=randomDecimal(0.6,1.15)+Math.min(0.75,currentWeight*0.06);
   return Math.max(0.30,base*(0.55+sp*0.45));
 }
-function updateFightDisplay(){drawTensionGrid();drawFightLine();renderDebugFightMeters();}
+function updateFightDisplay(){
+  drawTensionGrid();drawFightLine();renderDebugFightMeters();
+  if(state==="reeling"){
+    const text=getFightStateLabel()+(fishFighting?"":fishSteadyResistance?" — safe to reel.":" — best time to reel.");
+    if(hint.textContent!==text)hint.textContent=text;
+  }
+}
 function renderDebugFightMeters(){
   if(!fightPanel)return;
   if((!debugFightMeters && !debugFishStats) || state!=="reeling"){
@@ -553,7 +588,7 @@ function renderDebugFightMeters(){
       <div class="debugFightMeter"><div class="meterLabel">LINE OUT — ${Math.round(lineOut)}%</div><div class="meter"><div class="meterFill" id="debugDistanceFill" style="width:${lineOut.toFixed(1)}%"></div></div></div>`;
   }
   if(debugFishStats){
-    const fightState=fishFighting?(fightEffortBand.toUpperCase()+" PULL"):"RESTING";
+    const fightState=getFightStateLabel();
     html+=`<div class="debugFishStats">
       <div><strong>${currentFish?currentFish.name:"Fish"}</strong> — ${currentWeight.toFixed(2)} lb</div>
       <div>FIGHT TIME — ${fightElapsed.toFixed(1)}s</div>
@@ -598,7 +633,7 @@ function drawFightLine(){
   const stageHeight=(lineStage && lineStage.clientHeight) ? lineStage.clientHeight : 240;
   const rows=Math.max(1,Math.floor(stageHeight/lineHeight));
   const dots=Math.max(1,Math.round(1+ratio*(rows-1)));
-  const effortClass=fishFighting?"effort-"+fightEffortBand:"effort-rest";
+  const effortClass="effort-"+getFightState();
   for(let i=0;i<dots;i++){
     const dot=document.createElement("span");
     dot.className="lineDot "+effortClass;
@@ -670,6 +705,7 @@ function calculateNibbleDepth(weight){const base=5;let pull=Math.round(Math.min(
 function drawLine(){line.innerHTML="";for(let i=0;i<lineDepth;i++){const dot=document.createElement("span");dot.className="lineDot";dot.textContent="•";line.appendChild(dot);}}
 function resetFishing(){
   recordTestingResult("aborted","Encounter reset before completion.");
+  fishSteadyResistance=false;fightSteadySeconds=0;fightRestSeconds=0;
   clearFishingTimers();state="ready";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;tension=0;baselineTension=0;fightEffort=0;fightEffortBand="rest";fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fishStamina=100;maxFishStamina=100;surgeStartStaminaPercent=1;debugLastFightCheck="—";debugLastContinueCheck="—";lineDepth=0;currentFish=null;currentWeight=0;currentEncounterType=null;currentJunk=null;currentOffDepth=false;nibbleCount=0;successfulTwitches=0;twitchPrimed=false;pendingNervousnessMultiplier=1;disturbance=0;lastNibbleAt=0;fishHasLeft=false;
   fightPanel.classList.remove("active");if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";pullUpButton.style.display="none";drawLine();message.textContent="";hint.textContent="";renderCreel();renderGearInventory();updateDisplays();updateTimeControls();if(typeof updateDepthDisplay==="function")updateDepthDisplay();
 }
@@ -677,4 +713,3 @@ function clearFishingTimers(){clearInterval(lineTimer);clearInterval(fightTimer)
 function randomNumber(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
 function randomDecimal(min,max){return Math.random()*(max-min)+min;}
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
-
