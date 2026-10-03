@@ -403,6 +403,7 @@ function startSurge(profile,multiplier=1,fullStrength=false,effortOverride=null)
   fightEffortBand=getEffortBand(fightEffort);
   fishFighting=true;
   fightRemaining=getFightDuration()*(0.88+Math.min(1,fightEffort)*0.24);
+  if(fishHasSpecialAbility("endurance_fighter"))fightRemaining*=specialAbilities.endurance_fighter.surgeDurationMultiplier;
   forcedSurgeMultiplier=1;
   return true;
 }
@@ -448,6 +449,7 @@ function fightTick(){
       fightRecoveryLeft=false;
       if(activeSpecialAbility==="feint"){
         activeSpecialAbility=null;startSurge(profile,specialAbilities.feint.followupSurgeMultiplier);
+        fightRemaining*=specialAbilities.feint.followupDurationMultiplier;
       }
     }
   }else{
@@ -474,11 +476,13 @@ function fightTick(){
 
   // Distance is now the sole geometry cue. No lateral line movement or leverage
   // is derived from a visual swing.
-  const runRate=(0.7+currentWeight*0.12)*currentFish.fightPower*effortPower;
+  // Endurance changes distance and retrieval, not tension or resting retrieval.
+  const endurance=fishHasSpecialAbility("endurance_fighter")?specialAbilities.endurance_fighter:null;
+  const runRate=(0.7+currentWeight*0.12)*currentFish.fightPower*effortPower*(endurance?.runMultiplier ?? 1);
   // Rest is the player's clean retrieval window. Active effort progressively
   // reduces reel effectiveness, while the fish's run still contests what remains.
   const restReelRate=4.5*reel.reelPower;
-  const effortResistance=fishFighting?clamp(effortPower*0.55,0,0.75):0;
+  const effortResistance=fishFighting?clamp(effortPower*0.55+(endurance?.extraReelResistance ?? 0),0,0.75):0;
   const fightingReelRate=restReelRate*(1-effortResistance);
 
   if(isReeling){

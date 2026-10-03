@@ -80,3 +80,10 @@ This file records durable decisions for Fishin'. The current files in this folde
 
 - Species-specific nibble profiles target approximate no-Twitch departures per encounter: Pumpkinseed 1%, Yellow Perch 6.5%, Pickerel 15%, Smallmouth 10%, Largemouth 17.5%, White Perch 10%, Salmon 22.5%, Lake Trout 12.5%, Cusk 7.5%, Charr 4%. Brook Trout remains unchanged at about 42%. These are calculated targets, not raw nervousness values or observed success rates.
 - Preserve the free first nibble, existing bite-before-leave formula, Twitch mechanics, fight balance, and saltwater profiles. Playtest both waiting and well-timed Twitch. Departures are already included in Testing Waters logs.
+
+
+### Freshwater ability trial — October 2, 2026
+- Brook Trout: Quick Recovery triggers once per fight at the end of a surge at or below 70% stamina, restoring 25% of maximum stamina. Guaranteed at an eligible surge end; the existing once-per-fight guard remains.
+- Pickerel: Feint chance rises from 40% to 55% on eligible surge ends; false rest drops from 1.3s to 0.8s. Follow-up surges last 70% of their usual duration, with their existing strength unchanged.
+- Largemouth: replace Last Gasp with Endurance Fighter for a trial. Surges last 75% as long, active runs take 25% more line, and active retrieval resistance increases by 0.12 (still capped at 0.75). No extra tension, resting retrieval penalty, or base-stat changes. Hold Pressure still limits runs.
+- These are trial values awaiting player fight tests, especially average/trophy fish across gear tiers.
