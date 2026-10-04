@@ -83,6 +83,45 @@ const brook=context();setup(brook,'brook_trout');
 vm.runInContext('fishStamina=maxFishStamina*0.6;Math.random=()=>0;assert.equal(tryQuickRecovery(0.6),true);',brook);
 close(vm.runInContext('fishStamina/maxFishStamina',brook),0.85);
 
+// Largemouth gets one Last Gasp at <=35%, at its next scheduled fight check.
+const gasp=context();setup(gasp);
+assert.equal(vm.runInContext('fishHasSpecialAbility("last_gasp")',gasp),true);
+assert.equal(vm.runInContext('tryLastGasp(0.350001,currentFish.fightProfile)',gasp),false);
+assert.equal(vm.runInContext('tryLastGasp(0.35,currentFish.fightProfile)',gasp),true);
+assert.equal(vm.runInContext('fightEffort',gasp),1);
+assert.equal(vm.runInContext('tryLastGasp(0.25,currentFish.fightProfile)',gasp),false);
+vm.runInContext('resetFishing();',gasp);setup(gasp);
+assert.equal(vm.runInContext('lastGaspUsed',gasp),false);
+vm.runInContext('fishStamina=maxFishStamina*0.34;fightCooldown=0;fishSteadyResistance=true;fightTick();',gasp);
+assert.equal(vm.runInContext('lastGaspUsed',gasp),true);
+assert.equal(vm.runInContext('debugLastFightCheck',gasp),'LAST GASP');
+assert.equal(vm.runInContext('getFightState()',gasp),'strong');
+assert.equal(vm.runInContext('fishSteadyResistance',gasp),false);
+// A low-stamina active pull finishes normally; it is not interrupted by Last Gasp.
+const active=context();setup(active);
+vm.runInContext('fishStamina=maxFishStamina*0.34;startSurge(currentFish.fightProfile,1,false,0.6);fightRemaining=99;fightTick();',active);
+assert.equal(vm.runInContext('lastGaspUsed',active),false);
+assert.equal(vm.runInContext('fishFighting',active),true);
+const smallmouth=context();setup(smallmouth,'smallmouth_bass');
+assert.equal(vm.runInContext('tryLastGasp(0.2,currentFish.fightProfile)',smallmouth),false);
+
+// Brook Trout still recovers once at an eligible pull end in the steady model.
+const recovery=context();setup(recovery,'brook_trout');
+assert.equal(vm.runInContext('tryQuickRecovery(0.700001)',recovery),false);
+vm.runInContext('fishStamina=maxFishStamina*0.65;startSurge(currentFish.fightProfile,1,false,0.6);fightRemaining=0.05;',recovery);
+let stamina=vm.runInContext('fishStamina',recovery);
+const drain=(7+4*0.45)*0.9*(0.45+0.6*1.1)*0.1;
+const max=vm.runInContext('maxFishStamina',recovery);
+vm.runInContext('fightTick();',recovery);
+close(vm.runInContext('fishStamina',recovery),stamina-drain+max*0.25);
+assert.equal(vm.runInContext('quickRecoveryUsed',recovery),true);
+assert.equal(vm.runInContext('debugLastContinueCheck',recovery),'QUICK RECOVERY +25%');
+assert.equal(vm.runInContext('getFightState()',recovery),'steady');
+vm.runInContext('fishStamina=maxFishStamina*0.6;startSurge(currentFish.fightProfile,1,false,0.6);fightRemaining=0.05;',recovery);
+stamina=vm.runInContext('fishStamina',recovery);
+vm.runInContext('fightTick();',recovery);
+close(vm.runInContext('fishStamina',recovery),stamina-drain);
+
 // Reset logs the actual quiet state and counters before clearing them.
 const logs=context();
 vm.runInContext('debugTestingMode=true;Math.random=()=>0.9;currentFish=fishTypes.find(f=>f.id==="largemouth_bass");currentWeight=4;nibbleDepth=10;beginTestingEncounter();startFight();fightCooldown=999;isReeling=true;fightTick();resetFishing();',logs);
@@ -95,4 +134,15 @@ assert.match(logs.gameLogEntries[0].text,/QUIET TIME/);
 assert.equal(vm.runInContext('fishSteadyResistance',logs),false);
 close(vm.runInContext('fightSteadySeconds+fightRestSeconds',logs),0);
 
-console.log('Steady resistance, true rest, pressure, special abilities, display and logging checks passed.');
+// Ability-use flags survive later state checks in the completed test report.
+const abilityLog=context();
+vm.runInContext('debugTestingMode=true;currentFish=fishTypes.find(f=>f.id==="largemouth_bass");currentWeight=4;nibbleDepth=10;beginTestingEncounter();startFight();fishStamina=maxFishStamina*0.34;fishSteadyResistance=true;fightCooldown=0;fightTick();debugLastFightCheck="later check";recordTestingResult("lost","The fish runs out your line.");',abilityLog);
+assert.equal(abilityLog.gameLogEntries[0].result.fight.abilitiesUsed.lastGasp,true);
+assert.equal(abilityLog.gameLogEntries[0].result.fight.abilitiesUsed.quickRecovery,false);
+assert.match(abilityLog.gameLogEntries[0].text,/ABILITIES USED — Last Gasp/);
+const brookLog=context();
+vm.runInContext('debugTestingMode=true;currentFish=fishTypes.find(f=>f.id==="brook_trout");currentWeight=4;nibbleDepth=10;beginTestingEncounter();startFight();fishStamina=maxFishStamina*0.6;tryQuickRecovery(0.6);recordTestingResult("caught","Landed the fish.");',brookLog);
+assert.equal(brookLog.gameLogEntries[0].result.fight.abilitiesUsed.quickRecovery,true);
+assert.match(brookLog.gameLogEntries[0].text,/ABILITIES USED — Quick Recovery/);
+
+console.log('Steady resistance, true rest, pressure, Last Gasp scheduling/threshold/once-per-fight, Brook Trout recovery, special abilities, display and persistent ability-use logging checks passed.');

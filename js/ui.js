@@ -677,11 +677,16 @@ function stopPressure(){isHoldingPressure=false;if(fightPressureButton)fightPres
 fightPressureButton.addEventListener("pointerup",stopPressure);fightPressureButton.addEventListener("pointercancel",stopPressure);fightPressureButton.addEventListener("pointerleave",stopPressure);
 cutLineButton.addEventListener("click",()=>{if(state==="reeling")loseFish("You cut the line.");});
 
-function keyboardActivate(button){if(!button||button.disabled||button.offsetParent===null)return;button.click();}
-function keyboardStartReel(){if(state!=="reeling")return;isHoldingPressure=false;isReeling=true;fightReelButton.textContent="REELING... [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";}
-function keyboardStartPressure(){if(state!=="reeling"||!knowsTechnique("hold_pressure"))return;isReeling=false;isHoldingPressure=true;fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLDING... [↓]";}
+document.addEventListener("pointerdown",e=>{
+  if(testCopyDialog.open)return;
+  const button=e.target?.closest?.("button");
+  if(button && !button.disabled && ["fishButton","pullUpButton","fightReelButton","fightPressureButton","cutLineButton"].includes(button.id))trackTestingControlMethod(e.pointerType);
+},true);
+function keyboardActivate(button){if(!button||button.disabled||button.offsetParent===null)return;trackTestingControlMethod("keyboard");button.click();}
+function keyboardStartReel(){if(state!=="reeling")return;trackTestingControlMethod("keyboard");isHoldingPressure=false;isReeling=true;fightReelButton.textContent="REELING... [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";}
+function keyboardStartPressure(){if(state!=="reeling"||!knowsTechnique("hold_pressure"))return;trackTestingControlMethod("keyboard");isReeling=false;isHoldingPressure=true;fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLDING... [↓]";}
 document.addEventListener("keydown",e=>{
-  if(testCopyDialog.open || e.repeat)return;const tag=(e.target?.tagName||"").toLowerCase();if(["input","textarea","select"].includes(tag))return;
+  if(testCopyDialog.open || e.repeat || e.target?.closest?.(".testCopyButton"))return;const tag=(e.target?.tagName||"").toLowerCase();if(["input","textarea","select"].includes(tag))return;
   if(e.code==="Space" && ["ready","finished"].includes(state)){e.preventDefault();keyboardActivate(fishButton);return;}
   if((e.key==="h"||e.key==="H")&&state==="bite"){keyboardActivate(fishButton);return;}
   if((e.key==="j"||e.key==="J")&&["waiting","nibble"].includes(state)&&knowsTechnique("twitch")){keyboardActivate(fishButton);return;}

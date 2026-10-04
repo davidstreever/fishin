@@ -133,7 +133,7 @@ const junkItems = [
 const specialAbilities = {
   feint:{id:"feint",name:"Feint",triggerChance:0.55,followupSurgeMultiplier:1.65,followupDurationMultiplier:0.70,restDuration:0.80,restTarget:-0.21},
   endurance_fighter:{id:"endurance_fighter",name:"Endurance Fighter",surgeDurationMultiplier:0.75,runMultiplier:1.25,extraReelResistance:0.12},
-  last_gasp:{id:"last_gasp",name:"Last Gasp",threshold:0.25},
+  last_gasp:{id:"last_gasp",name:"Last Gasp",threshold:0.35},
   quick_recovery:{id:"quick_recovery",name:"Quick Recovery",threshold:0.70,recoveryFraction:0.25,chance:1.00},
   quick_reaction:{id:"quick_reaction",name:"Quick Reaction",chance:0.98,minDuration:2.1}
 };
@@ -180,7 +180,7 @@ const fishTypes = [
   fishDef("chain_pickerel","Chain Pickerel","freshwater",1.0,7.0,5.8,4.00,2.20,{shallow:1.00,mid:0.60,deep:0.05},"uncommon",{"Worm":0.8,"Minnow":1.8,"Insect":0.5,"Grub":0.7},["SHADE","COLD"],["Spring","Fall"],dayTimes,freshwaterNibbleProfiles.chain_pickerel,1650,["feint"]),
   fishDef("brook_trout","Brook Trout","freshwater",0.3,5.5,4.2,5.50,2.30,{shallow:1.00,mid:0.50,deep:0.10},"rare",{"Worm":1.5,"Minnow":1.2,"Insect":1.7,"Grub":1.8},["SHADE","RAIN","COLD"],["Spring","Fall"],dayTimes,brookTroutNibble,1700,["quick_recovery"]),
   fishDef("smallmouth_bass","Smallmouth Bass","freshwater",0.75,8.0,6.2,5.25,2.80,{shallow:0.45,mid:1.00,deep:0.35},"common",{"Worm":1.2,"Minnow":1.7,"Insect":1.0,"Grub":1.2},["SUN","MILD"],["Summer","Fall"],dayTimes,freshwaterNibbleProfiles.smallmouth_bass,1600),
-  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,3.00,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,freshwaterNibbleProfiles.largemouth_bass,1600),
+  fishDef("largemouth_bass","Largemouth Bass","freshwater",1.0,8.5,7.0,5.75,3.00,{shallow:0.65,mid:1.00,deep:0.15},"common",{"Worm":1.1,"Minnow":1.8,"Insect":0.8,"Grub":1.1},["SHADE","RAIN","HOT"],["Summer","Fall"],dayTimes,freshwaterNibbleProfiles.largemouth_bass,1600,["last_gasp"]),
   fishDef("white_perch","White Perch","freshwater",0.3,3.5,2.8,3.25,2.20,{shallow:0.30,mid:1.00,deep:0.45},"common",{"Worm":1.5,"Minnow":1.4,"Insect":1.3,"Grub":1.3},["SHADE","MILD"],["Spring","Summer","Fall"],dayTimes,freshwaterNibbleProfiles.white_perch,1850,["quick_reaction"]),
   fishDef("landlocked_salmon","Landlocked Salmon","freshwater",1.0,12.0,8.5,6.50,3.00,{shallow:0.10,mid:1.00,deep:0.65},"uncommon",{"Worm":0.7,"Minnow":1.9,"Insect":1.0,"Grub":0.8},["COLD","SHADE"],["Spring","Fall"],dayTimes,freshwaterNibbleProfiles.landlocked_salmon,1500),
   fishDef("lake_trout","Lake Trout","freshwater",1.5,25.0,16.0,6.75,2.50,{shallow:0.02,mid:0.25,deep:1.00},"uncommon",{"Worm":0.6,"Minnow":1.9,"Insect":0.6,"Grub":0.7},["COLD"],["Spring","Fall"],offshoreTimes,freshwaterNibbleProfiles.lake_trout,1450),
@@ -247,4 +247,3 @@ const seasonalWeatherTables = {
   Summer:[{weather:"summerClear",weight:40},{weather:"summerMildClear",weight:15},{weather:"summerCloudy",weight:20},{weather:"summerLightRain",weight:15},{weather:"summerRain",weight:10}],
   Fall:[{weather:"fallClear",weight:15},{weather:"fallColdClear",weight:15},{weather:"fallCloudy",weight:30},{weather:"fallMildCloudy",weight:15},{weather:"fallLightRain",weight:15},{weather:"fallRain",weight:10}]
 };
-
