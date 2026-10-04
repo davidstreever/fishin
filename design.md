@@ -39,13 +39,14 @@ This file records durable decisions for Fishin'. The current files in this folde
 
 ## Testing mode
 
+- Provide one-tap copying for the latest test, all saved tests, and each individual test entry. Copy the timestamp, readable report, and complete FULL RESULT JSON verbatim; preserve line breaks. If clipboard access is unavailable or denied, show a selectable read-only text field for manual phone copying.
 - One DEBUG checkbox enters isolated Testing Waters, enables forced species selection and live fish stats, and lists every freshwater and saltwater species including locked species. The existing weight bands remain available.
 - All rods, reels, tackle, and bait are temporarily available; learned techniques are preserved so tests report the actual unlocked skills. The calendar stays fixed and normal bite/fight rules remain active.
 - Log each encounter outcome, exact loss reason, full fish data, fight stats, equipped gear, unlocked techniques, books, conditions, and time spent reeling/holding/idle. The steady-resistance trial also records the fight-model identifier and time in steady resistance versus true rest; state labels must distinguish them. Save test results separately across reloads. Turning testing off restores the normal playthrough; testing catches and progression never enter the normal save.
 
 ## Interface and world
 
-- Mobile UI investigation — October 3, 2026: David reports a slight screen/scroll jump immediately after landing a fish while playtesting on a phone. Debug/testing mode may be involved; this is unconfirmed. Later, compare catches with debug on and off and check whether changing fight-panel height or appending the catch/test log moves the viewport. The enjoyable 5.08 lb Smallmouth fight reported that evening was also played on a phone.
+- Mobile hook/catch jump — October 3, 2026: David reports a slight screen/scroll jump around hooking or landing on a phone. Probable contributors are the different heights of normal versus fight controls, automatic scroll anchoring, and wide debug stats inserted into the narrow scene readout. The UI trial reserves control space, moves debug stats below the controls, wraps long stats, and disables automatic page scroll anchoring. Confirm on a real phone with debug on/off, both with and without Hold Pressure unlocked; verify hook, catch, loss, and reset transitions. The enjoyable 5.08 lb Smallmouth fight reported that evening was also played on a phone.
 - Keep the UI compact and old-school. ASCII, CSS, and mechanical-instrument treatments fit. Avoid a polished modern-game HUD. Controls should generally look like text rather than native browser controls. The established red link color is `#ff7777`.
 - Preserve the current weather, sky, water, and Old Pier navigation treatments unless there is a specific reason to change them.
 - Normal land locations include Fishing Hole, Lazy Brook, Big Lake, Old Pier, Market, Shop, Pub, and Journal.

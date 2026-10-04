@@ -112,7 +112,6 @@
         <div id="lineStage"><div id="tensionGrid" aria-hidden="true"><div id="tensionFillLayer"></div></div><div id="tensionInstrument" aria-label="Line tension" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="gaugeTitle">TENSION</div><div class="gaugeDial"><div class="dialArc"></div><div class="dialNeedle"></div><div class="dialPivot"></div><span class="dialLow">0</span><span class="dialHigh">!</span></div><div class="gaugeTrack"><div class="trackRail"><div class="trackNeedle"></div></div><div class="trackEnds"><span>0</span><span>!</span></div></div><div class="gaugeSpring"><div class="springRail"><div class="springNeedle"></div></div><span class="springHigh">!</span><span class="springLow">0</span></div></div><div id="line"></div></div>
         <div id="readout">
           <div id="message"></div>
-          <div id="fightPanel"></div>
           <div id="hint"></div>
         </div>
       </div>
@@ -120,6 +119,7 @@
     </div>
 
     <div id="depthControls" class="depthControls"></div>
+    <div id="fishingControls">
     <div id="normalControls">
       <button id="fishButton">Cast Line</button>
       <button id="pullUpButton">Pull Up</button>
@@ -134,6 +134,8 @@
       </div>
       <button id="cutLineButton">Cut Line</button>
     </div>
+    </div>
+    <div id="fightPanel" aria-label="Fight debug information"></div>
   </div>
 
   <div id="marketPanel">
@@ -206,7 +208,21 @@
   </div>
 
   <h2>Log</h2>
+  <div id="testLogTools" class="testLogTools" hidden>
+    <button id="copyLatestTestButton" type="button" class="testCopyButton">Copy latest test</button>
+    <button id="copyAllTestsButton" type="button" class="testCopyButton">Copy all tests</button>
+    <span id="testCopyStatus" role="status" aria-live="polite"></span>
+  </div>
   <div id="gameLog"><div class="empty">Nothing yet.</div></div>
+  <dialog id="testCopyDialog" class="testCopyDialog" aria-labelledby="testCopyTitle">
+    <h2 id="testCopyTitle">Copy test results</h2>
+    <p>Automatic copying is unavailable. Select the text, then use your phone's Copy command.</p>
+    <textarea id="testCopyText" readonly aria-label="Test results to copy" spellcheck="false"></textarea>
+    <div class="testCopyActions">
+      <button id="selectTestCopyButton" type="button">Select all</button>
+      <button id="closeTestCopyButton" type="button">Close</button>
+    </div>
+  </dialog>
 
   <script src="js/data.js"></script>
   <script src="js/state.js"></script>
@@ -218,4 +234,3 @@
   <script src="js/ui.js"></script>
 </body>
 </html>
-

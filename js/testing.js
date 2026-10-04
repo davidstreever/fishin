@@ -3,6 +3,34 @@ const TEST_RESULTS_KEY="fishinTestResults";
 let testingSnapshot=null;
 let testingEncounter=null;
 function cloneTestingData(value){return JSON.parse(JSON.stringify(value));}
+function formatTestingLogEntry(entry){
+  return "["+entry.season+" "+entry.day+" / "+entry.time+"]\n"+entry.text;
+}
+function renderTestLogTools(){
+  const hasTests=gameLogEntries.some(e=>e.type==="test");
+  testLogTools.hidden=!debugTestingMode && !hasTests;
+  copyLatestTestButton.disabled=copyAllTestsButton.disabled=!hasTests;
+}
+function selectTestCopyText(){
+  testCopyText.focus({preventScroll:true});
+  testCopyText.select();
+  testCopyText.setSelectionRange(0,testCopyText.value.length);
+}
+async function copyTestingLogEntries(entries){
+  if(!entries.length){testCopyStatus.textContent="No test results yet.";return;}
+  // Copy the saved text verbatim, including FULL RESULT, rather than rendered buttons.
+  const text=entries.map(formatTestingLogEntry).join("\n\n");
+  try{
+    if(!navigator.clipboard?.writeText)throw new Error("Clipboard unavailable");
+    await navigator.clipboard.writeText(text);
+    testCopyStatus.textContent=entries.length===1?"Copied test.":"Copied "+entries.length+" tests.";
+  }catch(error){
+    testCopyText.value=text;
+    if(!testCopyDialog.open)testCopyDialog.showModal();
+    selectTestCopyText();
+    testCopyStatus.textContent="Text ready to copy manually.";
+  }
+}
 function setTestingMode(enabled){
   if(enabled===debugTestingMode)return;
   if(enabled && !["ready","finished"].includes(state)){
@@ -65,4 +93,3 @@ function recordTestingResult(outcome,reason){
   try{localStorage.setItem(TEST_RESULTS_KEY,JSON.stringify(gameLogEntries.filter(e=>e.type==="test")));}
   catch(error){console.warn("Test results could not be saved",error);addLog("world","Test log storage is full. New results remain in this session only.");}
 }
-
