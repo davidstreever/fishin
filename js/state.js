@@ -150,4 +150,4 @@ let activeSpecialAbility = null;
 let forcedSurgeMultiplier = 1;
 let quickRecoveryUsed = false;
 let lastGaspUsed = false;
-
+let fightAbilityUseCounts = {};
