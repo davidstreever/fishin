@@ -210,7 +210,7 @@ const fishFightProfiles = {
   pumpkinseed:{staminaMultiplier:0.50,aggression:0.10,staminaDrain:1.35},
   yellow_perch:{staminaMultiplier:0.82,aggression:0.58,staminaDrain:1.10},
   chain_pickerel:{staminaMultiplier:0.82,aggression:0.72,staminaDrain:0.95},
-  brook_trout:{staminaMultiplier:1.10,aggression:0.68,staminaDrain:0.90},
+  brook_trout:{staminaMultiplier:1.10,aggression:0.75,staminaDrain:0.90},
   smallmouth_bass:{staminaMultiplier:1.22,aggression:0.88,staminaDrain:0.82},
   largemouth_bass:{staminaMultiplier:1.32,aggression:0.72,staminaDrain:0.82},
   white_perch:{staminaMultiplier:0.90,aggression:0.62,staminaDrain:1.10},
