@@ -145,4 +145,30 @@ vm.runInContext('debugTestingMode=true;currentFish=fishTypes.find(f=>f.id==="bro
 assert.equal(brookLog.gameLogEntries[0].result.fight.abilitiesUsed.quickRecovery,true);
 assert.match(brookLog.gameLogEntries[0].text,/ABILITIES USED — Quick Recovery/);
 
-console.log('Steady resistance, true rest, pressure, Last Gasp scheduling/threshold/once-per-fight, Brook Trout recovery, special abilities, display and persistent ability-use logging checks passed.');
+// Count Feints even if later debug text changes, and keep a saved copy after reset.
+const feintLog=context();
+vm.runInContext('debugTestingMode=true;currentFish=fishTypes.find(f=>f.id==="chain_pickerel");currentWeight=4;nibbleDepth=10;beginTestingEncounter();startFight();Math.random=()=>0.9;assert.equal(tryStartFeint(1),false);Math.random=()=>0;for(let i=0;i<3;i++)assert.equal(tryStartFeint(1),true);debugLastContinueCheck="later debug text";recordTestingResult("caught","Landed the fish.");',feintLog);
+const feintReport=feintLog.gameLogEntries[0];
+assert.equal(feintReport.result.fight.abilitiesUsed.feint,true);
+assert.equal(feintReport.result.fight.abilityUseCounts.feint,3);
+assert.match(feintReport.text,/ABILITIES USED — Feint ×3/);
+vm.runInContext('resetFishing();',feintLog);
+assert.equal(vm.runInContext('Object.keys(fightAbilityUseCounts).length',feintLog),0);
+assert.equal(feintReport.result.fight.abilityUseCounts.feint,3);
+setup(feintLog,'chain_pickerel');
+assert.equal(vm.runInContext('Object.keys(fightAbilityUseCounts).length',feintLog),0);
+// Perch Quick Reaction must appear in summaries; failed activation remains absent.
+for(const roll of [0,0.999]){
+  const perchLog=context();
+  vm.runInContext(`debugTestingMode=true;Math.random=()=>${roll};currentFish=fishTypes.find(f=>f.id==="yellow_perch");currentWeight=2;nibbleDepth=10;beginTestingEncounter();startFight();recordTestingResult("lost","The line snaps.");`,perchLog);
+  assert.equal(perchLog.gameLogEntries[0].result.fight.abilitiesUsed.quickReaction,roll===0);
+  assert.match(perchLog.gameLogEntries[0].text,roll===0?/ABILITIES USED — Quick Reaction/:/ABILITIES USED — None/);
+}
+// Aborted encounters report their actual activations before reset clears them.
+const abortedFeint=context();
+vm.runInContext('debugTestingMode=true;currentFish=fishTypes.find(f=>f.id==="chain_pickerel");currentWeight=4;nibbleDepth=10;beginTestingEncounter();startFight();Math.random=()=>0;tryStartFeint(1);resetFishing();',abortedFeint);
+assert.equal(abortedFeint.gameLogEntries[0].result.outcome,'aborted');
+assert.equal(abortedFeint.gameLogEntries[0].result.fight.abilityUseCounts.feint,1);
+assert.match(abortedFeint.gameLogEntries[0].text,/ABILITIES USED — Feint/);
+
+console.log('Fight mechanics, Last Gasp, Brook Trout recovery, Feint counts, Quick Reaction activation/nonactivation, saved ability snapshots, and reset/abort logging checks passed.');
