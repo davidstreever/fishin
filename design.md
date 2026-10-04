@@ -39,6 +39,7 @@ This file records durable decisions for Fishin'. The current files in this folde
 
 ## Testing mode
 
+- Log the inferred mobile/desktop device type, viewport size, and actual fishing-control input methods (touch, mouse, keyboard, or pen), including mixed inputs. Record cast/hook and fight controls; do not infer mouse/keyboard use from touch capability or screen width. Keep unavailable input information explicitly unknown, and retain ability-use flags so completed reports show whether Last Gasp or Quick Recovery fired.
 - Provide one-tap copying for the latest test, all saved tests, and each individual test entry. Copy the timestamp, readable report, and complete FULL RESULT JSON verbatim; preserve line breaks. If clipboard access is unavailable or denied, show a selectable read-only text field for manual phone copying.
 - One DEBUG checkbox enters isolated Testing Waters, enables forced species selection and live fish stats, and lists every freshwater and saltwater species including locked species. The existing weight bands remain available.
 - All rods, reels, tackle, and bait are temporarily available; learned techniques are preserved so tests report the actual unlocked skills. The calendar stays fixed and normal bite/fight rules remain active.
@@ -89,4 +90,3 @@ This file records durable decisions for Fishin'. The current files in this folde
 - Pickerel: Feint chance rises from 40% to 55% on eligible surge ends; false rest drops from 1.3s to 0.8s. Follow-up surges last 70% of their usual duration, with their existing strength unchanged.
 - Largemouth Last Gasp trial — October 3, 2026: keep Endurance Fighter removed and restore Last Gasp at or below 35% remaining stamina (previously 25%). It triggers once per fight at the next scheduled fight check, without interrupting an ongoing pull. Use the existing full-effort surge with its normal duration and no extra power multiplier or stamina restoration. Retain the 55% steady-resistance model, fight power 3.0, aggression, stamina, and nibble values. Keep this in a separate PR so the ability trial can be reverted independently. David's new phone playtests found normal and large T1 catches demanding and fun, while trophies were difficult; skilled T1 catches remain acceptable and upgrades should improve control and reliability. Preserve Brook Trout and Pickerel trial tweaks. Lake Trout's separately planned stamina-based retrieval experiment remains undecided.
 - These are trial values awaiting player fight tests, especially average/trophy fish across gear tiers.
-
