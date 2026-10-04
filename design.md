@@ -45,6 +45,7 @@ This file records durable decisions for Fishin'. The current files in this folde
 
 ## Interface and world
 
+- Mobile UI investigation — October 3, 2026: David reports a slight screen/scroll jump immediately after landing a fish while playtesting on a phone. Debug/testing mode may be involved; this is unconfirmed. Later, compare catches with debug on and off and check whether changing fight-panel height or appending the catch/test log moves the viewport. The enjoyable 5.08 lb Smallmouth fight reported that evening was also played on a phone.
 - Keep the UI compact and old-school. ASCII, CSS, and mechanical-instrument treatments fit. Avoid a polished modern-game HUD. Controls should generally look like text rather than native browser controls. The established red link color is `#ff7777`.
 - Preserve the current weather, sky, water, and Old Pier navigation treatments unless there is a specific reason to change them.
 - Normal land locations include Fishing Hole, Lazy Brook, Big Lake, Old Pier, Market, Shop, Pub, and Journal.
