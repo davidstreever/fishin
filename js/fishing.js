@@ -329,6 +329,7 @@ function missHook(){
 function consumeBait(){player.gear.bait[player.selectedBait]--;updateDisplays();renderGearInventory();saveGame();}
 
 function fishHasSpecialAbility(id){return !!currentFish?.specialAbilities?.includes(id);}
+function recordFightAbilityUse(id){fightAbilityUseCounts[id]=(fightAbilityUseCounts[id]||0)+1;}
 function tryStartFeint(staminaPercent){
   const ability=specialAbilities.feint;
   if(!fishHasSpecialAbility("feint")||staminaPercent<0.50||Math.random()>=ability.triggerChance)return false;
@@ -340,6 +341,7 @@ function tryStartFeint(staminaPercent){
   fightEffort=0;
   fightEffortBand="rest";
   debugLastContinueCheck+=" → FEINT";
+  recordFightAbilityUse("feint");
   return true;
 }
 function tryQuickRecovery(staminaPercent){
@@ -347,6 +349,7 @@ function tryQuickRecovery(staminaPercent){
   if(!fishHasSpecialAbility("quick_recovery")||quickRecoveryUsed||staminaPercent>ability.threshold||Math.random()>=ability.chance)return false;
   fishStamina=clamp(fishStamina+maxFishStamina*ability.recoveryFraction,0,maxFishStamina);
   quickRecoveryUsed=true;
+  recordFightAbilityUse("quick_recovery");
   debugLastContinueCheck="QUICK RECOVERY +"+Math.round(ability.recoveryFraction*100)+"%";
   return true;
 }
@@ -354,6 +357,7 @@ function tryLastGasp(staminaPercent,profile){
   const ability=specialAbilities.last_gasp;
   if(!fishHasSpecialAbility("last_gasp")||lastGaspUsed||staminaPercent>ability.threshold)return false;
   lastGaspUsed=true;
+  recordFightAbilityUse("last_gasp");
   startSurge(profile,1,true,1);
   debugLastFightCheck="LAST GASP";
   return true;
@@ -402,6 +406,7 @@ function chooseFightEffort(profile,staminaPercent,fullStrength=false){
   return clamp(raw,0.28,1);
 }
 function startFight(){
+  fightAbilityUseCounts={};
   if(testingEncounter)testingEncounter.hooked=true;
   state="reeling";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;startingDistance=nibbleDepth;fishDistance=startingDistance;maxFightDistance=startingDistance*1.75;fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fightEffort=0;fightEffortBand="rest";debugLastFightCheck="—";debugLastContinueCheck="—";
   const profile=currentFish.fightProfile || {staminaMultiplier:1,aggression:0.55,staminaDrain:0.9};
@@ -416,6 +421,7 @@ function startFight(){
     startSurge(profile,1,false,0.95);
     fightRemaining=Math.max(fightRemaining,specialAbilities.quick_reaction.minDuration);
     debugLastFightCheck="QUICK REACTION";
+    recordFightAbilityUse("quick_reaction");
   }
   fightPanel.classList.add("active");normalControls.style.display="none";fightControls.style.display="flex";fightPressureButton.style.display=knowsTechnique("hold_pressure")?"inline-block":"none";message.textContent="Fish on!";hint.textContent="";fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";updateFightDisplay();fightTimer=setInterval(fightTick,100);
 }
@@ -705,6 +711,7 @@ function calculateNibbleDepth(weight){const base=5;let pull=Math.round(Math.min(
 function drawLine(){line.innerHTML="";for(let i=0;i<lineDepth;i++){const dot=document.createElement("span");dot.className="lineDot";dot.textContent="•";line.appendChild(dot);}}
 function resetFishing(){
   recordTestingResult("aborted","Encounter reset before completion.");
+  fightAbilityUseCounts={};
   fishSteadyResistance=false;fightSteadySeconds=0;fightRestSeconds=0;
   clearFishingTimers();state="ready";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;tension=0;baselineTension=0;fightEffort=0;fightEffortBand="rest";fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fishStamina=100;maxFishStamina=100;surgeStartStaminaPercent=1;debugLastFightCheck="—";debugLastContinueCheck="—";lineDepth=0;currentFish=null;currentWeight=0;currentEncounterType=null;currentJunk=null;currentOffDepth=false;nibbleCount=0;successfulTwitches=0;twitchPrimed=false;pendingNervousnessMultiplier=1;disturbance=0;lastNibbleAt=0;fishHasLeft=false;
   fightPanel.classList.remove("active");renderDebugFightMeters();if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";pullUpButton.style.display="none";drawLine();message.textContent="";hint.textContent="";renderCreel();renderGearInventory();updateDisplays();updateTimeControls();if(typeof updateDepthDisplay==="function")updateDepthDisplay();
