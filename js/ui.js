@@ -19,6 +19,7 @@ const debugFishPanel=document.getElementById("debugFishPanel"),debugFishLocation
 
 
 const debugTestingToggle=document.getElementById("debugTestingToggle");
+const testLogTools=document.getElementById("testLogTools"),copyLatestTestButton=document.getElementById("copyLatestTestButton"),copyAllTestsButton=document.getElementById("copyAllTestsButton"),testCopyStatus=document.getElementById("testCopyStatus"),testCopyDialog=document.getElementById("testCopyDialog"),testCopyText=document.getElementById("testCopyText");
 
 const DEBUG_WEIGHT_LABELS=["Small","Below Average","Average","Large","Very Large","Trophy Range"];
 function getDebugLocationFish(){
@@ -49,7 +50,21 @@ function renderDebugFishSelector(){
   debugForcedSummary.textContent=selected?"Forcing: "+selected.name+" • "+debugWeightLabel.textContent+"\nNormal bite/fight rules remain active.":"No fish available here.";
 }
 function addLog(type,text,details){ logIdCounter++; gameLogEntries.push({id:logIdCounter,type,text,season:world.season,day:world.seasonDay,time:getTimeLabel(),...(details?{testResult:details}:{})}); renderGameLog(); }
-function renderGameLog(){ gameLog.innerHTML=""; for(const entry of [...gameLogEntries].reverse()){ const row=document.createElement("div");row.className="logEntry"+(entry.type==="world"?" logWorld":"")+(entry.type==="test"?" logTest":""); const t=document.createElement("span");t.className="logTime";t.textContent="["+entry.season+" "+entry.day+" / "+entry.time+"]"; const x=document.createElement("span");x.textContent=entry.text; row.append(t,x); gameLog.appendChild(row);} }
+function renderGameLog(){
+  gameLog.innerHTML="";
+  for(const entry of [...gameLogEntries].reverse()){
+    const row=document.createElement("div");row.className="logEntry"+(entry.type==="world"?" logWorld":"")+(entry.type==="test"?" logTest":"");
+    const t=document.createElement("span");t.className="logTime";t.textContent="["+entry.season+" "+entry.day+" / "+entry.time+"]";
+    if(entry.type==="test"){
+      const header=document.createElement("div");header.className="testLogHeader";
+      const copy=document.createElement("button");copy.type="button";copy.className="testCopyButton";copy.textContent="Copy";
+      copy.setAttribute("aria-label","Copy test result"+(entry.testResult?.fish?.name?" for "+entry.testResult.fish.name:""));
+      copy.addEventListener("click",()=>copyTestingLogEntries([entry]));header.append(t,copy);row.appendChild(header);
+    }else row.appendChild(t);
+    const x=document.createElement("span");x.className="logText";x.textContent=entry.text;row.appendChild(x);gameLog.appendChild(row);
+  }
+  renderTestLogTools();
+}
 
 
 function updateDisplays(){
@@ -666,7 +681,7 @@ function keyboardActivate(button){if(!button||button.disabled||button.offsetPare
 function keyboardStartReel(){if(state!=="reeling")return;isHoldingPressure=false;isReeling=true;fightReelButton.textContent="REELING... [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";}
 function keyboardStartPressure(){if(state!=="reeling"||!knowsTechnique("hold_pressure"))return;isReeling=false;isHoldingPressure=true;fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLDING... [↓]";}
 document.addEventListener("keydown",e=>{
-  if(e.repeat)return;const tag=(e.target?.tagName||"").toLowerCase();if(["input","textarea","select"].includes(tag))return;
+  if(testCopyDialog.open || e.repeat)return;const tag=(e.target?.tagName||"").toLowerCase();if(["input","textarea","select"].includes(tag))return;
   if(e.code==="Space" && ["ready","finished"].includes(state)){e.preventDefault();keyboardActivate(fishButton);return;}
   if((e.key==="h"||e.key==="H")&&state==="bite"){keyboardActivate(fishButton);return;}
   if((e.key==="j"||e.key==="J")&&["waiting","nibble"].includes(state)&&knowsTechnique("twitch")){keyboardActivate(fishButton);return;}
@@ -687,6 +702,10 @@ debugFightMetersToggle.addEventListener("change",()=>{debugFightMeters=debugFigh
 tensionViewSelect.addEventListener("change",()=>{if(typeof drawTensionGrid==="function")drawTensionGrid();});
 debugFishStatsToggle.addEventListener("change",()=>{debugFishStats=debugFishStatsToggle.checked;if(typeof renderDebugFightMeters==="function")renderDebugFightMeters();});
 debugTestingToggle.addEventListener("change",()=>setTestingMode(debugTestingToggle.checked));
+copyLatestTestButton.addEventListener("click",()=>copyTestingLogEntries(gameLogEntries.filter(e=>e.type==="test").slice(-1)));
+copyAllTestsButton.addEventListener("click",()=>copyTestingLogEntries(gameLogEntries.filter(e=>e.type==="test")));
+document.getElementById("selectTestCopyButton").addEventListener("click",selectTestCopyText);
+document.getElementById("closeTestCopyButton").addEventListener("click",()=>testCopyDialog.close());
 debugSpecifyFishToggle.addEventListener("change",()=>{debugSpecifyFish=debugTestingMode||debugSpecifyFishToggle.checked;renderDebugFishSelector();message.textContent=debugSpecifyFish?"Debug fish selection enabled.":"";});
 debugWeightSlider.addEventListener("input",()=>{debugWeightClass=Number(debugWeightSlider.value);renderDebugFishSelector();});
 debugWeatherSelect.addEventListener("change",()=>{const c=debugWeatherSelect.value;if(!c)return;setDebugWeather(c);debugWeatherSelect.value="";updateDisplays();startEnvironmentAnimations();saveGame();});
@@ -707,4 +726,3 @@ state="ready";
 refreshLocationUI();updateDisplays();updateInventoryDisplay();renderGearInventory();renderShopInventory();resetFishing();startEnvironmentAnimations();
 if(!world.introSeen) showIntroStep(1);
 setInterval(saveGame,5000);
-
