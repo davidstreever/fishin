@@ -18,6 +18,7 @@ class Element{
   append(...nodes){nodes.forEach(n=>this.appendChild(n));}
   appendChild(node){this.children.push(node);node.parentElement=this;return node;}
   matches(selector){return selector[0]==='.'?this.className.split(' ').includes(selector.slice(1)):this.tagName.toLowerCase()===selector;}
+  closest(selector){for(let node=this;node;node=node.parentElement)if(node.matches(selector))return node;return null;}
   querySelectorAll(selector){return this.children.flatMap(n=>[...(n.matches(selector)?[n]:[]),...n.querySelectorAll(selector)]);}
   setAttribute(key,value){this.attributes[key]=String(value);}
   addEventListener(name,callback){(this.events[name]??=[]).push(callback);}
@@ -30,14 +31,14 @@ class Element{
   close(){this.open=false;}
   getContext(){return {measureText:text=>({width:text.length*8})};}
 }
-function fixture(storage=new Map()){
+function fixture(storage=new Map(),device={}){
   const elements={};const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-  for(const match of html.matchAll(/<([a-z][a-z0-9]*)\b[^>]*\bid="([^"]+)"[^>]*>/g))elements[match[2]]=new Element(match[1]);
+  for(const match of html.matchAll(/<([a-z][a-z0-9]*)\b[^>]*\bid="([^"]+)"[^>]*>/g))elements[match[2]]=Object.assign(new Element(match[1]),{id:match[2]});
   const document=new Element('document');
   document.getElementById=id=>{assert.ok(elements[id],`Missing HTML ID: ${id}`);return elements[id];};
   document.createElement=tag=>new Element(tag);document.createTextNode=text=>Object.assign(new Element('#text'),{textContent:text});
   const copies=[];
-  const c=vm.createContext({console,document,navigator:{clipboard:{writeText:async text=>copies.push(text)}},
+  const c=vm.createContext({console,document,navigator:{clipboard:{writeText:async text=>copies.push(text)},...device},innerWidth:393,innerHeight:851,
     localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
     setInterval:()=>1,setTimeout:()=>1,clearInterval(){},clearTimeout(){},confirm:()=>false,
     getComputedStyle:()=>({font:'13px monospace',fontSize:'13px',fontFamily:'monospace',fontWeight:'normal'})});
@@ -93,6 +94,52 @@ async function main(){
   await reloaded.e.copyAllTestsButton.click();assert.equal(reloaded.copies.at(-1),expected+'\n\n'+expectedSecond);
   reloaded.run('setTestingMode(false);');assert.equal(reloaded.e.testLogTools.hidden,true);
   run('resetFishing();');assert.equal(e.fightPanel.innerHTML,'');
-  console.log('UI initialization, hook/catch/loss/reset, exact latest/individual/all copying, clipboard fallbacks, modal keyboard isolation, saved-result reload, and normal-save isolation passed.');
+
+  // Mobile hardware and actual methods are independent: record mixed controls.
+  const mobile=fixture(new Map(),{userAgent:'Mozilla/5.0 (Linux; Android 17) Mobile',userAgentData:{mobile:true},maxTouchPoints:5});
+  mobile.run('finishIntro();player.meta.learnedTechniques=["hold_pressure","twitch"];setTestingMode(true);debugForcedFishId="brook_trout";');
+  await mobile.document.dispatch('pointerdown',{target:mobile.e.fishButton,pointerType:'touch'});
+  await mobile.e.fishButton.click();
+  assert.equal(mobile.run('testingEncounter.device.mobile'),true);
+  assert.equal(mobile.run('testingEncounter.device.viewportWidth'),393);
+  assert.deepEqual([...mobile.run('testingEncounter.inputMethods')],['touch']);
+  mobile.run('clearFishingTimers();state="bite";updateFishingControls();');
+  await mobile.document.dispatch('pointerdown',{target:mobile.e.fishButton,pointerType:'mouse'});
+  await mobile.e.fishButton.click();
+  await mobile.document.dispatch('keydown',{key:'ArrowDown',target:mobile.e.fightPressureButton,preventDefault(){}});
+  await mobile.document.dispatch('keydown',{key:'ArrowUp',target:mobile.e.fightReelButton,preventDefault(){}});
+  assert.deepEqual([...mobile.run('testingEncounter.inputMethods')],['touch','mouse','keyboard']);
+  // Clicking copy and setup buttons must not count as fishing mouse input.
+  await mobile.document.dispatch('pointerdown',{target:mobile.e.copyLatestTestButton,pointerType:'pen'});
+  assert.deepEqual([...mobile.run('testingEncounter.inputMethods')],['touch','mouse','keyboard']);
+  mobile.run('landFish();');
+  const mobileLog=mobile.run('gameLogEntries.find(e=>e.type==="test")');
+  assert.match(mobileLog.text,/DEVICE — Mobile \(393 × 851\)/);
+  assert.match(mobileLog.text,/CONTROLS — touch, mouse, keyboard/);
+  assert.equal(mobileLog.testResult.device.touchCapable,true);
+
+  // A new encounter must not inherit the previous encounter's input methods.
+  mobile.run('resetFishing();');
+  await mobile.document.dispatch('pointerdown',{target:mobile.e.fishButton,pointerType:'mouse'});
+  await mobile.e.fishButton.click();
+  assert.deepEqual([...mobile.run('testingEncounter.inputMethods')],['mouse']);
+  // Touch-capable desktop hardware is still desktop; keyboard-only play is explicit.
+  const desktop=fixture(new Map(),{userAgent:'Mozilla/5.0 (X11; CrOS)',userAgentData:{mobile:false},maxTouchPoints:5});
+  desktop.run('finishIntro();setTestingMode(true);debugForcedFishId="brook_trout";');
+  await desktop.document.dispatch('keydown',{code:'Space',key:' ',target:desktop.e.fishButton,preventDefault(){}});
+  assert.equal(desktop.run('testingEncounter.device.mobile'),false);
+  assert.deepEqual([...desktop.run('testingEncounter.inputMethods')],['keyboard']);
+  desktop.run('clearFishingTimers();state="bite";updateFishingControls();');
+  await desktop.document.dispatch('keydown',{key:'h',target:desktop.e.fishButton,preventDefault(){}});
+  assert.equal(desktop.run('state'),'reeling');
+  assert.deepEqual([...desktop.run('testingEncounter.inputMethods')],['keyboard']);
+  // UA fallback handles a phone and an iPad that reports a desktop-like UA.
+  delete desktop.c.navigator.userAgentData;desktop.c.navigator.userAgent='Mozilla/5.0 (iPhone)';
+  assert.equal(desktop.run('getTestingDeviceInfo().mobile'),true);
+  desktop.c.navigator.userAgent='Mozilla/5.0 (Macintosh)';
+  assert.equal(desktop.run('getTestingDeviceInfo().mobile'),true);
+  desktop.c.navigator.userAgent='';
+  assert.equal(desktop.run('getTestingDeviceInfo().mobile'),null);
+  console.log('UI/copying, saved-result reload, normal-save isolation, device detection, touch/mouse/keyboard mixing, keyboard cast/hook, and per-encounter input reset checks passed.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
