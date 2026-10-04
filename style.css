@@ -108,7 +108,38 @@ body{font-family:monospace;max-width:760px;margin:50px auto;padding:20px;backgro
 #tensionFillLayer.danger{background:rgba(113,31,31,.46)}
 
 
-.logTest span:last-child{display:block;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5}
+.logTest .logText{display:block;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.5}
+
+/* Keep hook/landing transitions from moving the viewport or the control area. */
+body{overflow-anchor:none}
+#fishingControls{min-height:96px}
+#fightPanel.debugMetersVisible{max-width:none;max-height:310px;overflow:auto}
+.debugFishStats{white-space:normal;overflow-wrap:anywhere}
+#fishingArea{grid-template-columns:170px minmax(0,1fr)}
+#readout{min-width:0;overflow-wrap:anywhere}
+.testLogTools{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin-bottom:8px}
+.testLogTools[hidden]{display:none}
+.testCopyButton{border:0;background:transparent;color:#ff7777;font:inherit;font-size:13px;min-height:44px;padding:8px 3px;cursor:pointer}
+.testCopyButton:hover:not(:disabled){text-decoration:underline}
+.testLogHeader{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px}
+#testCopyStatus{flex-basis:100%;min-height:18px;color:#666;font-size:12px}
+.testCopyDialog{box-sizing:border-box;width:min(620px,calc(100% - 24px));max-height:85vh;background:#f5f1e8;color:#222;border:1px solid #999;padding:16px}
+.testCopyDialog::backdrop{background:rgba(0,0,0,.35)}
+.testCopyDialog h2{margin-top:0}
+#testCopyText{box-sizing:border-box;width:100%;height:40vh;resize:vertical;font:16px/1.4 monospace;background:rgba(255,255,255,.25);color:#222;border:1px solid #bbb}
+.testCopyActions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+@media(max-width:620px){
+  #status{height:auto;min-height:470px}
+  .fishingMetaRow{grid-template-columns:minmax(0,1fr);gap:6px}
+  .currentGear{min-width:0;width:230px;max-width:100%;justify-self:end}
+  #fishingArea{grid-template-columns:100px minmax(0,1fr);column-gap:10px}
+  #lineStage{width:100px}
+  #fightControls{gap:8px;align-items:flex-start}
+  .fightPrimaryActions{flex:1;min-width:0;max-width:240px}
+  #fightReelButton{font-size:14px;padding:12px 6px;white-space:nowrap}
+  #fightPressureButton{font-size:12px;padding:7px 6px;white-space:nowrap}
+  #cutLineButton{margin-left:0;font-size:12px;padding:6px}
+}
 
 /* Neutral resistance is safe to reel, distinct from a full rest or a pull. */
 .lineDot.effort-steady{color:#777}
