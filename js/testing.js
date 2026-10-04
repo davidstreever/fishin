@@ -2,7 +2,21 @@
 const TEST_RESULTS_KEY="fishinTestResults";
 let testingSnapshot=null;
 let testingEncounter=null;
+let testingPendingControlMethod=null;
 function cloneTestingData(value){return JSON.parse(JSON.stringify(value));}
+function getTestingDeviceInfo(){
+  const nav=typeof navigator==="undefined"?{}:navigator;
+  const ua=nav.userAgent||"";
+  const mobile=typeof nav.userAgentData?.mobile==="boolean"?nav.userAgentData.mobile:
+    ua?(/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(/Macintosh/i.test(ua)&&(nav.maxTouchPoints||0)>1)):null;
+  return {mobile,touchCapable:(nav.maxTouchPoints||0)>0,viewportWidth:typeof innerWidth==="number"?innerWidth:null,viewportHeight:typeof innerHeight==="number"?innerHeight:null};
+}
+function trackTestingControlMethod(method){
+  if(!debugTestingMode || !["touch","mouse","pen","keyboard"].includes(method))return;
+  if(testingEncounter && !testingEncounter.logged){
+    if(!testingEncounter.inputMethods.includes(method))testingEncounter.inputMethods.push(method);
+  }else testingPendingControlMethod=method;
+}
 function formatTestingLogEntry(entry){
   return "["+entry.season+" "+entry.day+" / "+entry.time+"]\n"+entry.text;
 }
@@ -38,6 +52,7 @@ function setTestingMode(enabled){
     message.textContent="Finish the current encounter before entering Testing Mode.";
     return;
   }
+  testingPendingControlMethod=null;
   if(enabled){
     saveGame();
     testingSnapshot=cloneTestingData({world,player,logs:gameLogEntries,logIdCounter,catchIdCounter,debugSpecifyFish,debugFishStats,debugForcedFishId});
@@ -73,7 +88,8 @@ function setTestingMode(enabled){
 }
 function beginTestingEncounter(){
   if(!debugTestingMode || !currentFish)return;
-  testingEncounter={fish:cloneTestingData(currentFish),weight:currentWeight,weightClass:debugWeightClass,gear:{rod:cloneTestingData(getEquippedRod()),reel:cloneTestingData(getEquippedReel()),tackle:activeTackleId(),bait:player.selectedBait},skills:[...(player.meta.learnedTechniques||[])],books:[...player.books],depth:currentDepth,season:world.season,weather:cloneTestingData(world.weather),time:getTimeLabel(),hooked:false,reelSeconds:0,pressureSeconds:0,idleSeconds:0,logged:false};
+  testingEncounter={fish:cloneTestingData(currentFish),weight:currentWeight,weightClass:debugWeightClass,gear:{rod:cloneTestingData(getEquippedRod()),reel:cloneTestingData(getEquippedReel()),tackle:activeTackleId(),bait:player.selectedBait},skills:[...(player.meta.learnedTechniques||[])],books:[...player.books],device:getTestingDeviceInfo(),inputMethods:testingPendingControlMethod?[testingPendingControlMethod]:[],depth:currentDepth,season:world.season,weather:cloneTestingData(world.weather),time:getTimeLabel(),hooked:false,reelSeconds:0,pressureSeconds:0,idleSeconds:0,logged:false};
+  testingPendingControlMethod=null;
 }
 function trackTestingInput(dt){
   if(!debugTestingMode || !testingEncounter || testingEncounter.logged)return;
@@ -86,6 +102,7 @@ function recordTestingResult(outcome,reason){
   const result={...cloneTestingData(attempt),outcome,reason,recordedAt:new Date().toISOString(),nibbles:nibbleCount,successfulTwitches,fight:attempt.hooked?{seconds:fightElapsed,stamina:fishStamina,maxStamina:maxFishStamina,staminaPercent:maxFishStamina?fishStamina/maxFishStamina*100:0,distance:fishDistance,maxDistance:maxFightDistance,tension,baselineTension,effort:fightEffort,state:getFightState(),model:"steady_resistance_55",steadySeconds:fightSteadySeconds,restSeconds:fightRestSeconds,abilitiesUsed:{lastGasp:lastGaspUsed,quickRecovery:quickRecoveryUsed},lastFightCheck:debugLastFightCheck,special:debugLastContinueCheck}:null};
   const f=result.fight;
   const lines=["TEST — "+outcome.toUpperCase()+": "+reason,attempt.fish.name+" ("+attempt.fish.id+") — "+attempt.weight.toFixed(2)+" lb"+(attempt.weight>=attempt.fish.trophyWeight?" TROPHY":""),"GEAR — "+attempt.gear.rod.name+" / "+attempt.gear.reel.name+" / "+attempt.gear.tackle+" / "+attempt.gear.bait,"SKILLS — "+(attempt.skills.join(", ")||"None"),"NIBBLES — "+nibbleCount+"; SUCCESSFUL TWITCHES — "+successfulTwitches];
+  lines.splice(4,0,"DEVICE — "+(attempt.device.mobile===null?"Unknown":attempt.device.mobile?"Mobile":"Desktop")+(attempt.device.viewportWidth?" ("+attempt.device.viewportWidth+" × "+attempt.device.viewportHeight+")":""),"CONTROLS — "+(attempt.inputMethods.join(", ")||"Unknown (no input recorded)"));
   if(f)lines.push("FIGHT TIME — "+f.seconds.toFixed(1)+"s","STAMINA — "+f.stamina.toFixed(1)+" / "+f.maxStamina.toFixed(1)+" ("+f.staminaPercent.toFixed(1)+"%)","STATE — "+f.state+"; EFFORT — "+(f.effort*100).toFixed(0)+"%","TENSION — "+f.tension.toFixed(1)+"%; BASELINE — "+f.baselineTension.toFixed(1)+"%","DISTANCE — "+f.distance.toFixed(2)+" / "+f.maxDistance.toFixed(2),"INPUT TIME — reel "+attempt.reelSeconds.toFixed(1)+"s / pressure "+attempt.pressureSeconds.toFixed(1)+"s / idle "+attempt.idleSeconds.toFixed(1)+"s","QUIET TIME — resistance "+f.steadySeconds.toFixed(1)+"s / rest "+f.restSeconds.toFixed(1)+"s","LAST FIGHT CHECK — "+f.lastFightCheck,"SPECIAL — "+f.special,"ABILITIES USED — "+([f.abilitiesUsed.lastGasp?"Last Gasp":null,f.abilitiesUsed.quickRecovery?"Quick Recovery":null].filter(Boolean).join(", ")||"None"));
   else lines.push("FIGHT — not hooked");
   lines.push("FULL RESULT — "+JSON.stringify(result));
