@@ -1,9 +1,11 @@
 // Fishin' — save.js
 const SAVE_KEY = "fishinSave";
 const META_SAVE_KEY = "fishinMeta";
+// A reload is asynchronous: old timers must not recreate a deleted save.
+let resetPending = false;
 
 function saveMetaProgress(){
-  if(debugTestingMode)return;
+  if(debugTestingMode || resetPending)return;
   const meta={
     obsession:player.meta?.obsession||0,
     hasAmulet:!!player.meta?.hasAmulet,
@@ -25,7 +27,7 @@ function loadMetaProgress(){
 }
 
 function saveGame(){
-  if(debugTestingMode)return;
+  if(debugTestingMode || resetPending)return;
   const saveData={version:13,world,player,gameLogEntries,logIdCounter,catchIdCounter};
   localStorage.setItem(SAVE_KEY,JSON.stringify(saveData));
   saveMetaProgress();
@@ -117,6 +119,7 @@ function loadGame(){
 
 // Debug RESET is a true wipe. Future amulet prestige should use prestigeResetWithAmulet().
 function deleteSave(){
+  resetPending=true;
   localStorage.removeItem(SAVE_KEY);
   localStorage.removeItem(META_SAVE_KEY);
   location.reload();
@@ -126,6 +129,7 @@ function deleteSave(){
 function prestigeResetWithAmulet(){
   player.meta.hasAmulet=true;
   saveMetaProgress();
+  resetPending=true;
   localStorage.removeItem(SAVE_KEY);
   location.reload();
 }

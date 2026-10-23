@@ -37,15 +37,59 @@ function fixture(storage=new Map(),device={}){
   const document=new Element('document');
   document.getElementById=id=>{assert.ok(elements[id],`Missing HTML ID: ${id}`);return elements[id];};
   document.createElement=tag=>new Element(tag);document.createTextNode=text=>Object.assign(new Element('#text'),{textContent:text});
-  const copies=[];
+  const copies=[],intervals=[];
+  let reloads=0;
   const c=vm.createContext({console,document,navigator:{clipboard:{writeText:async text=>copies.push(text)},...device},innerWidth:393,innerHeight:851,
     localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
-    setInterval:()=>1,setTimeout:()=>1,clearInterval(){},clearTimeout(){},confirm:()=>false,
+    setInterval:(callback,delay)=>{intervals.push({callback,delay});return intervals.length;},setTimeout:()=>1,clearInterval(){},clearTimeout(){},confirm:()=>false,
+    location:{reload(){reloads++;}},
     getComputedStyle:()=>({font:'13px monospace',fontSize:'13px',fontFamily:'monospace',fontWeight:'normal'})});
   for(const match of html.matchAll(/<script src="([^"]+)"/g))vm.runInContext(fs.readFileSync(path.join(root,match[1]),'utf8'),c,{filename:match[1]});
-  return {c,e:elements,copies,storage,document,run:code=>vm.runInContext(code,c)};
+  return {c,e:elements,copies,storage,document,intervals,get reloads(){return reloads;},run:code=>vm.runInContext(code,c)};
 }
 async function main(){
+  // Reproduce an autosave firing while reset's asynchronous reload is pending.
+  const reset=fixture();
+  reset.run('finishIntro();world.seasonDay=4;player.money=100;player.meta.obsession=5;saveGame();');
+  const existing=fixture(reset.storage);
+  assert.equal(existing.run('world.seasonDay'),4);
+  assert.equal(existing.run('world.introSeen'),true);
+  reset.c.confirm=()=>true;
+  await reset.e.debugResetButton.click();
+  assert.equal(reset.reloads,1);
+  reset.intervals.find(timer=>timer.delay===5000).callback();
+  reset.run('saveGame();saveMetaProgress();');
+  assert.equal(reset.storage.has('fishinSave'),false);
+  assert.equal(reset.storage.has('fishinMeta'),false);
+  const fresh=fixture(reset.storage);
+  assert.equal(fresh.run('world.seasonDay'),1);
+  assert.equal(fresh.run('world.introSeen'),false);
+  assert.equal(fresh.run('player.money'),0);
+  assert.equal(fresh.run('player.meta.obsession'),0);
+  assert.equal(fresh.e.introOverlay.style.display,'flex');
+  assert.match(fresh.e.introText.innerHTML,/Your father died/);
+  fresh.intervals.find(timer=>timer.delay===5000).callback();
+  const refreshed=fixture(fresh.storage);
+  assert.equal(refreshed.run('world.seasonDay'),1);
+  assert.equal(refreshed.e.introOverlay.style.display,'flex');
+  refreshed.run('finishIntro();saveGame();');
+  assert.equal(JSON.parse(refreshed.storage.get('fishinSave')).world.introSeen,true);
+
+  // Prestige preserves meta once, but cannot resave the old run during reload.
+  const prestige=fixture();
+  prestige.run('finishIntro();world.seasonDay=4;player.meta.obsession=7;saveGame();prestigeResetWithAmulet();');
+  const preservedMeta=prestige.storage.get('fishinMeta');
+  prestige.intervals.find(timer=>timer.delay===5000).callback();
+  prestige.run('player.meta.obsession=99;saveMetaProgress();');
+  assert.equal(prestige.reloads,1);
+  assert.equal(prestige.storage.has('fishinSave'),false);
+  assert.equal(prestige.storage.get('fishinMeta'),preservedMeta);
+  const reborn=fixture(prestige.storage);
+  assert.equal(reborn.run('world.seasonDay'),1);
+  assert.equal(reborn.run('player.meta.obsession'),7);
+  assert.equal(reborn.run('player.meta.hasAmulet'),true);
+  assert.equal(reborn.e.introOverlay.style.display,'flex');
+
   const f=fixture();const {e,run,copies}=f;
   assert.equal(e.testLogTools.hidden,true);
   run('finishIntro();player.meta.learnedTechniques=["hold_pressure","twitch"];setTestingMode(true);');
@@ -140,6 +184,6 @@ async function main(){
   assert.equal(desktop.run('getTestingDeviceInfo().mobile'),true);
   desktop.c.navigator.userAgent='';
   assert.equal(desktop.run('getTestingDeviceInfo().mobile'),null);
-  console.log('UI/copying, saved-result reload, normal-save isolation, device detection, touch/mouse/keyboard mixing, keyboard cast/hook, and per-encounter input reset checks passed.');
+  console.log('Reset/autosave race, fresh-start dialogue, prestige preservation, UI/copying, saved-result reload, normal-save isolation, device detection, touch/mouse/keyboard mixing, keyboard cast/hook, and per-encounter input reset checks passed.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
