@@ -572,8 +572,8 @@ function getFightDuration(){
 function updateFightDisplay(){
   drawTensionGrid();drawFightLine();renderDebugFightMeters();
   if(state==="reeling"){
-    const text=getFightStateLabel()+(fishFighting?"":fishSteadyResistance?" — safe to reel.":" — best time to reel.");
-    if(hint.textContent!==text)hint.textContent=text;
+    // The line communicates effort and safe retrieval windows; avoid live prose cues.
+    if(hint.textContent)hint.textContent="";
   }
 }
 function renderDebugFightMeters(){
