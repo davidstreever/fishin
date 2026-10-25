@@ -504,9 +504,6 @@ function fightTick(){
 
   const effort=fishFighting?fightEffort:0;
   const effortPower=fishFighting?(0.25+Math.min(1.25,effort)*0.75):0;
-  // Strong surges ramp up the cost of releasing or reeling from 80% to full
-  // effort. Keep Hold Pressure on its existing run and stamina rules.
-  const strongSurge=clamp((effort-0.80)/0.20,0,1);
 
   // Distance is now the sole geometry cue. No lateral line movement or leverage
   // is derived from a visual swing.
@@ -521,7 +518,7 @@ function fightTick(){
 
   if(isReeling){
     if(fishFighting){
-      tension+=(20+currentWeight*4.2)*currentFish.fightPower*effortPower*rod.tensionMultiplier*(1+0.15*strongSurge)*dt;
+      tension+=(20+currentWeight*4.2)*currentFish.fightPower*effortPower*rod.tensionMultiplier*dt;
       fishDistance+=(runRate-fightingReelRate)*dt;
     }else{
       // Both quiet states are safe to reel. Steady resistance limits progress;
@@ -536,7 +533,7 @@ function fightTick(){
   }else{
     if(fishFighting){
       tension-=22*dt;
-      fishDistance+=runRate*(1+0.30*strongSurge)*dt;
+      fishDistance+=runRate*dt;
     }else{
       tension-=13*dt;
       fishDistance+=(0.08+currentWeight*0.015)*dt;
