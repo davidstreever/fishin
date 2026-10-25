@@ -424,7 +424,7 @@ function startFight(){
     debugLastFightCheck="QUICK REACTION";
     recordFightAbilityUse("quick_reaction");
   }
-  fightPanel.classList.add("active");normalControls.style.display="none";fightControls.style.display="flex";fightPressureButton.style.display=knowsTechnique("hold_pressure")?"inline-block":"none";message.textContent="Fish on!";hint.textContent="";fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";updateFightDisplay();fightTimer=setInterval(fightTick,100);
+  fightPanel.classList.add("active");normalControls.style.display="none";fightControls.style.display="flex";fightPressureButton.style.display=knowsTechnique("hold_pressure")?"inline-block":"none";message.textContent="Fish on!";hint.textContent="";fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLD PRESSURE [→]";updateFightDisplay();fightTimer=setInterval(fightTick,100);
 }
 function startSurge(profile,multiplier=1,fullStrength=false,effortOverride=null){
   if(fishStamina<=0 && !fullStrength)return false;
