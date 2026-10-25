@@ -31,7 +31,7 @@ close(vm.runInContext('fishStamina/maxFishStamina',steady),0.5);
 close(vm.runInContext('tension-baselineTension',steady),0);
 assert.equal(vm.runInContext('getFightState()',steady),'steady');
 close(vm.runInContext('fightSteadySeconds',steady),0.1);
-assert.match(steady.hint.textContent,/STEADY RESISTANCE/);
+assert.equal(steady.hint.textContent,'');
 assert.equal(steady.line.children[0].className,'lineDot effort-steady');
 
 // True rests retain full retrieval and the existing small recovery.
@@ -41,7 +41,7 @@ close(vm.runInContext('fishDistance',rest),10-4.5*0.1);
 close(vm.runInContext('fishStamina/maxFishStamina',rest),0.5+0.0075*0.1);
 close(vm.runInContext('fightRestSeconds',rest),0.1);
 assert.equal(vm.runInContext('getFightState()',rest),'rest');
-assert.match(rest.hint.textContent,/RESTING/);
+assert.equal(rest.hint.textContent,'');
 assert.equal(rest.line.children[0].className,'lineDot effort-rest');
 
 // Fatigue increases real rest opportunities; active pulls clear resistance.
@@ -65,6 +65,57 @@ const initial=vm.runInContext('({stamina:fishStamina,distance:fishDistance})',pr
 vm.runInContext('fightTick();',pressure);
 close(initial.stamina-vm.runInContext('fishStamina',pressure),(7+4*0.45)*0.82*(0.45+1.1)*1.55*0.1);
 close(vm.runInContext('fishDistance',pressure)-initial.distance,(0.7+4*0.12)*3*0.3*0.1);
+
+// Strong surges cost more released line and reeling tension, with a gradual
+// increase through the strong band. Pressure and reeling distance stay intact.
+for(const gear of ['old','aluminum','carbon','titanium']){
+  const rodId={old:'old_rod',aluminum:'fiberglass_rod',carbon:'graphite_rod',titanium:'boron_rod'}[gear];
+  const reelId=gear+'_reel';
+  for(const [effort,lineBonus,tensionBonus] of [[0.4,1,1],[0.65,1,1],[0.8,1,1],[0.9,1.25,1.125],[1,1.5,1.25],[1.25,1.5,1.25]]){
+    for(const action of ['release','reel','pressure']){
+      const c=context();setup(c);
+      vm.runInContext(`getEquippedRod=()=>rods[${JSON.stringify(rodId)}];getEquippedReel=()=>reels[${JSON.stringify(reelId)}];startSurge(currentFish.fightProfile,1,false,${effort});fightRemaining=99;isReeling=${action==='reel'};isHoldingPressure=${action==='pressure'};tension=50;`,c);
+      const before=vm.runInContext('({distance:fishDistance,stamina:fishStamina})',c);
+      vm.runInContext('fightTick();',c);
+      const after=vm.runInContext('({distance:fishDistance,stamina:fishStamina,tension,rod:getEquippedRod(),reel:getEquippedReel()})',c);
+      const power=0.25+effort*0.75;
+      const run=(0.7+4*0.12)*3*power;
+      if(action==='release'){
+        close(after.distance-before.distance,run*0.1*lineBonus);
+        close(after.tension,47.8);
+      }else if(action==='reel'){
+        close(after.tension-50,(20+4*4.2)*3*power*after.rod.tensionMultiplier*0.1*tensionBonus);
+        close(after.distance-before.distance,(run-4.5*after.reel.reelPower*(1-Math.min(power*0.55,0.75)))*0.1);
+      }else{
+        close(after.distance-before.distance,run*after.reel.pressureRunMultiplier*0.1);
+        close(after.tension,49.35);
+      }
+      const pressureDrain=action==='pressure'?1.55*after.rod.pressureStaminaMultiplier:1;
+      close(before.stamina-after.stamina,(7+4*0.45)*0.82*(0.45+effort*1.1)*pressureDrain*0.1);
+      assert.equal(vm.runInContext('state',c),'reeling');
+    }
+  }
+}
+
+// Crossing into strong effort has no sudden jump in distance or tension.
+function surgeOutcome(effort,action){
+  const c=context();setup(c);
+  vm.runInContext(`startSurge(currentFish.fightProfile,1,false,${effort});fightRemaining=99;isReeling=${action==='reel'};tension=50;fightTick();`,c);
+  return vm.runInContext('({distance:fishDistance,tension})',c);
+}
+for(const action of ['release','reel']){
+  const below=surgeOutcome(0.8-1e-6,action),above=surgeOutcome(0.8+1e-6,action);
+  assert.ok(Math.abs(above.distance-below.distance)<1e-4);
+  assert.ok(Math.abs(above.tension-below.tension)<1e-4);
+}
+
+// The stronger released run reaches the existing line limit; reeling still
+// snaps at the existing tension limit. Neither route adds a new loss rule.
+for(const action of ['release','reel']){
+  const c=context();setup(c);
+  vm.runInContext(`loseFish=reason=>{state="finished";globalThis.lossReason=reason;};startSurge(currentFish.fightProfile,1,false,1);fightRemaining=99;isReeling=${action==='reel'};fishDistance=maxFightDistance-0.5;tension=${action==='reel'?90:50};fightTick();`,c);
+  assert.equal(c.lossReason,action==='reel'?'The line snaps.':'The fish runs out your line.');
+}
 
 // Feint is still a scripted true rest and starts its follow-up surge.
 const feint=context();setup(feint,'chain_pickerel');
@@ -172,3 +223,4 @@ assert.equal(abortedFeint.gameLogEntries[0].result.fight.abilityUseCounts.feint,
 assert.match(abortedFeint.gameLogEntries[0].text,/ABILITIES USED — Feint/);
 
 console.log('Fight mechanics, Last Gasp, Brook Trout recovery, Feint counts, Quick Reaction activation/nonactivation, saved ability snapshots, and reset/abort logging checks passed.');
+
