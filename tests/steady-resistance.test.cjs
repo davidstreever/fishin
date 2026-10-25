@@ -66,12 +66,12 @@ vm.runInContext('fightTick();',pressure);
 close(initial.stamina-vm.runInContext('fishStamina',pressure),(7+4*0.45)*0.82*(0.45+1.1)*1.55*0.1);
 close(vm.runInContext('fishDistance',pressure)-initial.distance,(0.7+4*0.12)*3*0.3*0.1);
 
-// Strong surges cost more released line and reeling tension, with a gradual
-// increase through the strong band. Pressure and reeling distance stay intact.
+// Weight, effort, and gear retain their existing effects without extra strong-
+// surge bonuses. Pressure and reeling distance stay intact across effort levels.
 for(const gear of ['old','aluminum','carbon','titanium']){
   const rodId={old:'old_rod',aluminum:'fiberglass_rod',carbon:'graphite_rod',titanium:'boron_rod'}[gear];
   const reelId=gear+'_reel';
-  for(const [effort,lineBonus,tensionBonus] of [[0.4,1,1],[0.65,1,1],[0.8,1,1],[0.9,1.15,1.075],[1,1.3,1.15],[1.25,1.3,1.15]]){
+  for(const effort of [0.4,0.65,0.8,0.9,1,1.25]){
     for(const action of ['release','reel','pressure']){
       const c=context();setup(c);
       vm.runInContext(`getEquippedRod=()=>rods[${JSON.stringify(rodId)}];getEquippedReel=()=>reels[${JSON.stringify(reelId)}];startSurge(currentFish.fightProfile,1,false,${effort});fightRemaining=99;isReeling=${action==='reel'};isHoldingPressure=${action==='pressure'};tension=50;`,c);
@@ -81,10 +81,10 @@ for(const gear of ['old','aluminum','carbon','titanium']){
       const power=0.25+effort*0.75;
       const run=(0.7+4*0.12)*3*power;
       if(action==='release'){
-        close(after.distance-before.distance,run*0.1*lineBonus);
+        close(after.distance-before.distance,run*0.1);
         close(after.tension,47.8);
       }else if(action==='reel'){
-        close(after.tension-50,(20+4*4.2)*3*power*after.rod.tensionMultiplier*0.1*tensionBonus);
+        close(after.tension-50,(20+4*4.2)*3*power*after.rod.tensionMultiplier*0.1);
         close(after.distance-before.distance,(run-4.5*after.reel.reelPower*(1-Math.min(power*0.55,0.75)))*0.1);
       }else{
         close(after.distance-before.distance,run*after.reel.pressureRunMultiplier*0.1);
@@ -109,11 +109,11 @@ for(const action of ['release','reel']){
   assert.ok(Math.abs(above.tension-below.tension)<1e-4);
 }
 
-// The stronger released run reaches the existing line limit; reeling still
+// Released runs reach the existing line limit; reeling still
 // snaps at the existing tension limit. Neither route adds a new loss rule.
 for(const action of ['release','reel']){
   const c=context();setup(c);
-  vm.runInContext(`loseFish=reason=>{state="finished";globalThis.lossReason=reason;};startSurge(currentFish.fightProfile,1,false,1);fightRemaining=99;isReeling=${action==='reel'};fishDistance=maxFightDistance-0.4;tension=${action==='reel'?90:50};fightTick();`,c);
+  vm.runInContext(`loseFish=reason=>{state="finished";globalThis.lossReason=reason;};startSurge(currentFish.fightProfile,1,false,1);fightRemaining=99;isReeling=${action==='reel'};fishDistance=maxFightDistance-0.3;tension=${action==='reel'?90:50};fightTick();`,c);
   assert.equal(c.lossReason,action==='reel'?'The line snaps.':'The fish runs out your line.');
 }
 
