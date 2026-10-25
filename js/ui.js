@@ -81,11 +81,11 @@ function updateFishingControls(){
   if(activeEncounter){
     if(state==='waiting'||state==='nibble'){
       fishButton.disabled=!knowsTechnique('twitch'); fishButton.textContent=knowsTechnique('twitch')?'Twitch [J]':'Line Out';
-      pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Pull Up [L]'; return;
+      pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent=state==='nibble'?'Set Hook [L]':'Pull Up [L]'; return;
     }
     if(state==='bite'){
-      fishButton.disabled=false; fishButton.textContent='HOOK [H]';
-      pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Pull Up [L]'; return;
+      fishButton.disabled=false; fishButton.textContent='Set Hook [H]';
+      pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Set Hook [L]'; return;
     }
     if(state==='junk'){
       fishButton.disabled=false; fishButton.textContent='Pull Up';
