@@ -147,3 +147,9 @@ body{overflow-anchor:none}
 /* Compact fishing calendar: natural wrapping without splitting date phrases. */
 #fishingHeader{display:block;white-space:normal;line-height:1.4;overflow-wrap:normal;word-break:normal}
 #fishingHeader .headerMoney{margin-left:0;white-space:nowrap}
+
+/* Isolated hookset prototype: brief nibble movement, sustained bite pull. */
+@keyframes hooksetNibbleTick{0%,100%{transform:translateX(0)}35%{transform:translateX(5px)}65%{transform:translateX(-2px)}}
+#line.hooksetNibble{animation:hooksetNibbleTick 420ms ease-out}
+#line.hooksetBite{transform:translateX(10px)}
+#line.hooksetBite .lineDot{color:#711f1f;font-weight:bold}
