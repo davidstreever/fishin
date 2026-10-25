@@ -212,7 +212,7 @@ function renderActiveGearControls(){
   fillGearSelect(reelGearSelect,player.gear.ownedReels.map(id=>reels[id]).filter(Boolean),player.gear.reel,id=>equipGear("reel",id));
   const tackleOptions=[{id:"bobber",name:"Bobber"},...player.gear.ownedTackle.map(id=>tackleItems[id]).filter(Boolean)];
   fillGearSelect(tackleGearSelect,tackleOptions,activeTackleId(),id=>selectTackle(id));
-  const baitOptions=Object.keys(player.gear.bait).filter(name=>player.gear.bait[name]>0).map(name=>({id:name,name}));
+  const baitOptions=Object.keys(player.gear.bait).filter(name=>player.gear.bait[name]>0||name===player.selectedBait).map(name=>({id:name,name}));
   fillGearSelect(baitGearSelect,baitOptions,player.selectedBait,id=>selectBait(id));
   if(baitAmountDisplay)baitAmountDisplay.textContent="×"+(player.gear.bait[player.selectedBait]||0);
   const specials=Array.isArray(player.gear.ownedSpecialItems)?player.gear.ownedSpecialItems:[];
@@ -230,7 +230,7 @@ function renderGearInventory(){
   addPicker("Rod",player.gear.ownedRods.map(id=>rods[id]).filter(Boolean),player.gear.rod,id=>equipGear("rod",id));
   addPicker("Reel",player.gear.ownedReels.map(id=>reels[id]).filter(Boolean),player.gear.reel,id=>equipGear("reel",id));
   addPicker("Tackle",[{id:"bobber",name:"Bobber"},...player.gear.ownedTackle.map(id=>tackleItems[id]).filter(Boolean)],activeTackleId(),id=>selectTackle(id));
-  addPicker("Bait",Object.keys(player.gear.bait).filter(name=>player.gear.bait[name]>0).map(name=>({id:name,name:name+" ×"+player.gear.bait[name]})),player.selectedBait,id=>selectBait(id));
+  addPicker("Bait",Object.keys(player.gear.bait).filter(name=>player.gear.bait[name]>0||name===player.selectedBait).map(name=>({id:name,name:name+" ×"+player.gear.bait[name]})),player.selectedBait,id=>selectBait(id));
   gearInventory.appendChild(summary);
   const showNewspaperGear=player.newspaper.subscribed||player.newspaper.ownedIssues.length>0||(player.meta.hasAmulet&&player.meta.newspaperUnlocked);
   if(showNewspaperGear){
