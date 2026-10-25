@@ -521,7 +521,7 @@ function fightTick(){
 
   if(isReeling){
     if(fishFighting){
-      tension+=(20+currentWeight*4.2)*currentFish.fightPower*effortPower*rod.tensionMultiplier*(1+0.25*strongSurge)*dt;
+      tension+=(20+currentWeight*4.2)*currentFish.fightPower*effortPower*rod.tensionMultiplier*(1+0.15*strongSurge)*dt;
       fishDistance+=(runRate-fightingReelRate)*dt;
     }else{
       // Both quiet states are safe to reel. Steady resistance limits progress;
@@ -536,7 +536,7 @@ function fightTick(){
   }else{
     if(fishFighting){
       tension-=22*dt;
-      fishDistance+=runRate*(1+0.50*strongSurge)*dt;
+      fishDistance+=runRate*(1+0.30*strongSurge)*dt;
     }else{
       tension-=13*dt;
       fishDistance+=(0.08+currentWeight*0.015)*dt;

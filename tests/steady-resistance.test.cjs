@@ -71,7 +71,7 @@ close(vm.runInContext('fishDistance',pressure)-initial.distance,(0.7+4*0.12)*3*0
 for(const gear of ['old','aluminum','carbon','titanium']){
   const rodId={old:'old_rod',aluminum:'fiberglass_rod',carbon:'graphite_rod',titanium:'boron_rod'}[gear];
   const reelId=gear+'_reel';
-  for(const [effort,lineBonus,tensionBonus] of [[0.4,1,1],[0.65,1,1],[0.8,1,1],[0.9,1.25,1.125],[1,1.5,1.25],[1.25,1.5,1.25]]){
+  for(const [effort,lineBonus,tensionBonus] of [[0.4,1,1],[0.65,1,1],[0.8,1,1],[0.9,1.15,1.075],[1,1.3,1.15],[1.25,1.3,1.15]]){
     for(const action of ['release','reel','pressure']){
       const c=context();setup(c);
       vm.runInContext(`getEquippedRod=()=>rods[${JSON.stringify(rodId)}];getEquippedReel=()=>reels[${JSON.stringify(reelId)}];startSurge(currentFish.fightProfile,1,false,${effort});fightRemaining=99;isReeling=${action==='reel'};isHoldingPressure=${action==='pressure'};tension=50;`,c);
@@ -113,7 +113,7 @@ for(const action of ['release','reel']){
 // snaps at the existing tension limit. Neither route adds a new loss rule.
 for(const action of ['release','reel']){
   const c=context();setup(c);
-  vm.runInContext(`loseFish=reason=>{state="finished";globalThis.lossReason=reason;};startSurge(currentFish.fightProfile,1,false,1);fightRemaining=99;isReeling=${action==='reel'};fishDistance=maxFightDistance-0.5;tension=${action==='reel'?90:50};fightTick();`,c);
+  vm.runInContext(`loseFish=reason=>{state="finished";globalThis.lossReason=reason;};startSurge(currentFish.fightProfile,1,false,1);fightRemaining=99;isReeling=${action==='reel'};fishDistance=maxFightDistance-0.4;tension=${action==='reel'?90:50};fightTick();`,c);
   assert.equal(c.lossReason,action==='reel'?'The line snaps.':'The fish runs out your line.');
 }
 
