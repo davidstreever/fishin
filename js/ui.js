@@ -668,13 +668,53 @@ function closeNewspaper(){newspaperPanel.style.display="none";returnToFishing();
 function stepNewspaperIssue(direction){const issues=ownedIssuesChronological(),issue=displayedNewspaperIssue(),index=issues.findIndex(i=>i.key===issue?.key),next=issues[index+direction];if(next)showNewspaperEdition(next);}
 newspaperFishingLink.addEventListener("click",openNewspaper);newspaperReturnButton.addEventListener("click",closeNewspaper);forecastReadButton.addEventListener("click",()=>{const issue=displayedNewspaperIssue();if(issue)renderForecast(issue);});newspaperIssueSelect.addEventListener("change",()=>showNewspaperEdition(findOwnedIssue(newspaperIssueSelect.value)));previousIssueButton.addEventListener("click",()=>stepNewspaperIssue(-1));nextIssueButton.addEventListener("click",()=>stepNewspaperIssue(1));
 fishButton.addEventListener("click",handleMainButton);pullUpButton.addEventListener("click",handleSecondaryFishingButton);sleepButton.addEventListener("click",()=>{world.period==="Night"?goToSleep():catchUpSleep();});quitJobButton.addEventListener("click",quitJob);journalButton.addEventListener("click",openJournal);pubButton.addEventListener("click",openPub);pubReturnButton.addEventListener("click",closePub);pubTalkButton.addEventListener("click",()=>{if(pubTalkActions.style.display==="block")pubTalkActions.style.display="none";else showOldTimerTalk();});pubBartenderTalkButton.addEventListener("click",()=>{if(pubBartenderActions.style.display==="block")pubBartenderActions.style.display="none";else showBartenderTalk();});pubLeaveButton.addEventListener("click",closePub);journalReturnButton.addEventListener("click",closeJournal);marketButton.addEventListener("click",()=>goToLocation("market"));shopButton.addEventListener("click",()=>goToLocation("shop"));marketReturnButton.addEventListener("click",returnToFishing);shopReturnButton.addEventListener("click",returnToFishing);sellAllButton.addEventListener("click",sellAllFish);
-fightReelButton.addEventListener("pointerdown",e=>{if(state!=="reeling")return;e.preventDefault();isHoldingPressure=false;isReeling=true;fightReelButton.textContent="REELING... [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";});
-function stopReeling(){isReeling=false;if(fightReelButton)fightReelButton.textContent="HOLD TO REEL [↑]";}
-fightReelButton.addEventListener("pointerup",stopReeling);fightReelButton.addEventListener("pointercancel",stopReeling);fightReelButton.addEventListener("pointerleave",stopReeling);
-
-fightPressureButton.addEventListener("pointerdown",e=>{if(state!=="reeling")return;e.preventDefault();isReeling=false;isHoldingPressure=true;fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLDING... [↓]";});
-function stopPressure(){isHoldingPressure=false;if(fightPressureButton)fightPressureButton.textContent="HOLD PRESSURE [↓]";}
-fightPressureButton.addEventListener("pointerup",stopPressure);fightPressureButton.addEventListener("pointercancel",stopPressure);fightPressureButton.addEventListener("pointerleave",stopPressure);
+let fightHoldOwner=null;
+function renderFightHoldButtons(){
+  const reeling=state==="reeling"&&isReeling,pressure=state==="reeling"&&isHoldingPressure;
+  fightReelButton.textContent=reeling?"REELING... [↑]":"HOLD TO REEL [↑]";
+  fightPressureButton.textContent=pressure?"HOLDING... [↓]":"HOLD PRESSURE [↓]";
+  for(const [button,held] of [[fightReelButton,reeling],[fightPressureButton,pressure]]){
+    button.classList.toggle("is-held",held);button.setAttribute("aria-pressed",String(held));
+  }
+}
+function clearFightHold(){
+  // Clear ownership before releasing capture: a late event from an old finger
+  // must not stop a newer pointer or keyboard hold.
+  const previous=fightHoldOwner;fightHoldOwner=null;
+  isReeling=false;isHoldingPressure=false;
+  if(previous?.type==="pointer"){
+    try{if(previous.button.hasPointerCapture?.(previous.pointerId))previous.button.releasePointerCapture(previous.pointerId);}catch{}
+  }
+  renderFightHoldButtons();
+}
+function beginFightHold(action,owner){
+  if(state!=="reeling"||testCopyDialog.open||(action==="pressure"&&!knowsTechnique("hold_pressure")))return false;
+  clearFightHold();fightHoldOwner=owner;
+  isReeling=action==="reel";isHoldingPressure=action==="pressure";
+  renderFightHoldButtons();return true;
+}
+function endFightPointer(e,button=null){
+  if(fightHoldOwner?.type!=="pointer"||fightHoldOwner.pointerId!==e.pointerId)return;
+  if(button&&fightHoldOwner.button!==button)return;
+  clearFightHold();
+}
+for(const [button,action] of [[fightReelButton,"reel"],[fightPressureButton,"pressure"]]){
+  button.addEventListener("pointerdown",e=>{
+    if(button.disabled||(e.button!=null&&e.button!==0))return;
+    if(!beginFightHold(action,{type:"pointer",pointerId:e.pointerId,button}))return;
+    e.preventDefault();
+    // Keep receiving the lift even when a thumb drifts beyond the hit area.
+    // Document-level end handlers remain a fallback if capture is unavailable.
+    try{button.setPointerCapture(e.pointerId);}catch{}
+  });
+  for(const event of ["pointerup","pointercancel","lostpointercapture"])button.addEventListener(event,e=>endFightPointer(e,button));
+}
+for(const event of ["pointerup","pointercancel"])document.addEventListener(event,e=>endFightPointer(e),true);
+for(const event of ["contextmenu","selectstart","dragstart"])fightControls.addEventListener(event,e=>{if(state==="reeling")e.preventDefault();});
+globalThis.addEventListener?.("blur",clearFightHold);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)clearFightHold();});
+function stopReeling(){if(fightHoldOwner?.type==="keyboard"&&fightHoldOwner.key==="ArrowUp")clearFightHold();}
+function stopPressure(){if(fightHoldOwner?.type==="keyboard"&&fightHoldOwner.key==="ArrowDown")clearFightHold();}
 cutLineButton.addEventListener("click",()=>{if(state==="reeling")loseFish("You cut the line.");});
 
 document.addEventListener("pointerdown",e=>{
@@ -683,8 +723,8 @@ document.addEventListener("pointerdown",e=>{
   if(button && !button.disabled && ["fishButton","pullUpButton","fightReelButton","fightPressureButton","cutLineButton"].includes(button.id))trackTestingControlMethod(e.pointerType);
 },true);
 function keyboardActivate(button){if(!button||button.disabled||button.offsetParent===null)return;trackTestingControlMethod("keyboard");button.click();}
-function keyboardStartReel(){if(state!=="reeling")return;trackTestingControlMethod("keyboard");isHoldingPressure=false;isReeling=true;fightReelButton.textContent="REELING... [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";}
-function keyboardStartPressure(){if(state!=="reeling"||!knowsTechnique("hold_pressure"))return;trackTestingControlMethod("keyboard");isReeling=false;isHoldingPressure=true;fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLDING... [↓]";}
+function keyboardStartReel(){if(beginFightHold("reel",{type:"keyboard",key:"ArrowUp"}))trackTestingControlMethod("keyboard");}
+function keyboardStartPressure(){if(beginFightHold("pressure",{type:"keyboard",key:"ArrowDown"}))trackTestingControlMethod("keyboard");}
 document.addEventListener("keydown",e=>{
   if(testCopyDialog.open || e.repeat || e.target?.closest?.(".testCopyButton"))return;const tag=(e.target?.tagName||"").toLowerCase();if(["input","textarea","select"].includes(tag))return;
   if(e.code==="Space" && ["ready","finished"].includes(state)){e.preventDefault();keyboardActivate(fishButton);return;}
