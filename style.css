@@ -143,3 +143,7 @@ body{overflow-anchor:none}
 
 /* Neutral resistance is safe to reel, distinct from a full rest or a pull. */
 .lineDot.effort-steady{color:#777}
+
+/* Compact fishing calendar: natural wrapping without splitting date phrases. */
+#fishingHeader{display:block;white-space:normal;line-height:1.4;overflow-wrap:normal;word-break:normal}
+#fishingHeader .headerMoney{margin-left:0;white-space:nowrap}
