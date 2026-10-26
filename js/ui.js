@@ -84,7 +84,7 @@ function updateFishingControls(){
       pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Pull Up [L]'; return;
     }
     if(state==='bite'){
-      fishButton.disabled=false; fishButton.textContent='HOOK [H]';
+      fishButton.disabled=false; fishButton.textContent='HOOK [↑]';
       pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Pull Up [L]'; return;
     }
     if(state==='junk'){
@@ -108,7 +108,7 @@ function updateFishingControls(){
 
 function updateTimeControls(){
   if(pubButton){pubButton.disabled=!pubAvailable() || (state!=="ready"&&state!=="finished");pubButton.title=pubAvailable()?"The Black Dog is open.":"The Black Dog opens in the evening.";}
-  cutLineButton.textContent="Cut Line [K]"; fightReelButton.textContent=isReeling?"REELING... [↑]":"HOLD TO REEL [↑]"; if(!isHoldingPressure)fightPressureButton.textContent="HOLD PRESSURE [↓]";
+  cutLineButton.textContent="Cut Line [K]"; fightReelButton.textContent=isReeling?"REELING... [↑]":"HOLD TO REEL [↑]"; if(!isHoldingPressure)fightPressureButton.textContent="HOLD PRESSURE [→]";
   sleepButton.style.display="none"; quitJobButton.style.display="none";
   if(world.period==="Night"){sleepButton.style.display="inline-block";sleepButton.title="Go to sleep.";sleepButton.textContent="Sleep [S]";}
   else if(hasSleepDebt()&&["Morning","Day"].includes(world.period)){sleepButton.style.display="inline-block";sleepButton.title="Catch up on sleep debt. This uses the rest of the current period.";sleepButton.textContent="Sleep [S]";}
@@ -672,7 +672,7 @@ let fightHoldOwner=null;
 function renderFightHoldButtons(){
   const reeling=state==="reeling"&&isReeling,pressure=state==="reeling"&&isHoldingPressure;
   fightReelButton.textContent=reeling?"REELING... [↑]":"HOLD TO REEL [↑]";
-  fightPressureButton.textContent=pressure?"HOLDING... [↓]":"HOLD PRESSURE [↓]";
+  fightPressureButton.textContent=pressure?"HOLDING... [→]":"HOLD PRESSURE [→]";
   for(const [button,held] of [[fightReelButton,reeling],[fightPressureButton,pressure]]){
     button.classList.toggle("is-held",held);button.setAttribute("aria-pressed",String(held));
   }
@@ -714,7 +714,7 @@ for(const event of ["contextmenu","selectstart","dragstart"])fightControls.addEv
 globalThis.addEventListener?.("blur",clearFightHold);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)clearFightHold();});
 function stopReeling(){if(fightHoldOwner?.type==="keyboard"&&fightHoldOwner.key==="ArrowUp")clearFightHold();}
-function stopPressure(){if(fightHoldOwner?.type==="keyboard"&&fightHoldOwner.key==="ArrowDown")clearFightHold();}
+function stopPressure(){if(fightHoldOwner?.type==="keyboard"&&fightHoldOwner.key==="ArrowRight")clearFightHold();}
 cutLineButton.addEventListener("click",()=>{if(state==="reeling")loseFish("You cut the line.");});
 
 document.addEventListener("pointerdown",e=>{
@@ -724,20 +724,46 @@ document.addEventListener("pointerdown",e=>{
 },true);
 function keyboardActivate(button){if(!button||button.disabled||button.offsetParent===null)return;trackTestingControlMethod("keyboard");button.click();}
 function keyboardStartReel(){if(beginFightHold("reel",{type:"keyboard",key:"ArrowUp"}))trackTestingControlMethod("keyboard");}
-function keyboardStartPressure(){if(beginFightHold("pressure",{type:"keyboard",key:"ArrowDown"}))trackTestingControlMethod("keyboard");}
+function keyboardStartPressure(){if(beginFightHold("pressure",{type:"keyboard",key:"ArrowRight"}))trackTestingControlMethod("keyboard");}
+function acceptsFishingKeyboard(e){
+  if(testCopyDialog.open||pierPanel.style.display==="none"||e.altKey||e.ctrlKey||e.metaKey)return false;
+  if(e.target?.closest?.(".testCopyButton")||e.target?.isContentEditable)return false;
+  return !["input","textarea","select"].includes((e.target?.tagName||"").toLowerCase());
+}
+function isFishingMovementKey(e){
+  return !e.shiftKey&&(["ArrowUp","ArrowRight","ArrowDown","ArrowLeft"].includes(e.key)||e.code==="Space"||e.key===" ");
+}
 document.addEventListener("keydown",e=>{
-  if(testCopyDialog.open || e.repeat || e.target?.closest?.(".testCopyButton"))return;const tag=(e.target?.tagName||"").toLowerCase();if(["input","textarea","select"].includes(tag))return;
-  if(e.code==="Space" && ["ready","finished"].includes(state)){e.preventDefault();keyboardActivate(fishButton);return;}
+  if(!acceptsFishingKeyboard(e))return;
+  const movementKey=isFishingMovementKey(e);
+  // Auto-repeat must be consumed too, including while waiting or just after a
+  // catch. Otherwise a held game key starts scrolling the page mid-fight.
+  if(movementKey)e.preventDefault();
+  if(e.repeat)return;
+  if(movementKey&&e.key==="ArrowUp"){
+    if(state==="bite")keyboardActivate(fishButton);
+    if(state==="reeling")keyboardStartReel();
+    return;
+  }
+  if(movementKey&&e.key==="ArrowRight"){keyboardStartPressure();return;}
+  if(movementKey&&(e.code==="Space"||e.key===" ")){
+    if(["ready","finished"].includes(state))keyboardActivate(fishButton);
+    return;
+  }
   if((e.key==="h"||e.key==="H")&&state==="bite"){keyboardActivate(fishButton);return;}
   if((e.key==="j"||e.key==="J")&&["waiting","nibble"].includes(state)&&knowsTechnique("twitch")){keyboardActivate(fishButton);return;}
-  if(e.key==="ArrowUp"){e.preventDefault();keyboardStartReel();return;}
-  if(e.key==="ArrowDown"){e.preventDefault();keyboardStartPressure();return;}
   if((e.key==="k"||e.key==="K")&&state==="reeling"){keyboardActivate(cutLineButton);return;}
   if((e.key==="l"||e.key==="L")&&["waiting","nibble","bite"].includes(state)){keyboardActivate(pullUpButton);return;}
   if((e.key==="s"||e.key==="S")&&sleepButton.offsetParent!==null&&!sleepButton.disabled){keyboardActivate(sleepButton);return;}
   if((e.key==="w"||e.key==="W")&&isWorkDue()&&["ready","finished"].includes(state)){keyboardActivate(fishButton);return;}
-});
-document.addEventListener("keyup",e=>{if(e.key==="ArrowUp")stopReeling();if(e.key==="ArrowDown")stopPressure();});
+},true);
+document.addEventListener("keyup",e=>{
+  // Always release the owning key, even if focus moved to a text field or
+  // another panel while it was held. Pointer ownership remains independent.
+  if(e.key==="ArrowUp")stopReeling();
+  if(e.key==="ArrowRight")stopPressure();
+  if(acceptsFishingKeyboard(e)&&isFishingMovementKey(e))e.preventDefault();
+},true);
 
 debugResetButton.addEventListener("click",()=>{if(debugTestingMode){message.textContent="Turn off Testing Mode before resetting your save.";return;}if(confirm("Delete the Fishin' save and start over?"))deleteSave();});
 debugAddBaitButton.addEventListener("click",()=>{Object.keys(player.gear.bait).forEach(name=>player.gear.bait[name]+=12);addLog("world","DEBUG: Added 12 of every bait.");renderGearInventory();updateDisplays();saveGame();});
