@@ -21,8 +21,15 @@ class Element{
   closest(selector){for(let node=this;node;node=node.parentElement)if(node.matches(selector))return node;return null;}
   querySelectorAll(selector){return this.children.flatMap(n=>[...(n.matches(selector)?[n]:[]),...n.querySelectorAll(selector)]);}
   setAttribute(key,value){this.attributes[key]=String(value);}
+  setPointerCapture(id){(this.capturedPointers??=new Set()).add(id);}
+  hasPointerCapture(id){return this.capturedPointers?.has(id)||false;}
+  releasePointerCapture(id){this.capturedPointers?.delete(id);}
   addEventListener(name,callback){(this.events[name]??=[]).push(callback);}
-  async dispatch(name,event={}){for(const f of this.events[name]||[])await f(event);}
+  async dispatch(name,event={}){
+    event.target??=this;event.defaultPrevented??=false;
+    event.preventDefault??=function(){this.defaultPrevented=true;};
+    for(const f of this.events[name]||[])await f(event);
+  }
   click(){if(!this.disabled)return this.dispatch('click');}
   focus(options){this.focusOptions=options;}
   select(){this.selectionStart=0;this.selectionEnd=this.value.length;}
@@ -33,19 +40,20 @@ class Element{
 }
 function fixture(storage=new Map(),device={}){
   const elements={};const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-  for(const match of html.matchAll(/<([a-z][a-z0-9]*)\b[^>]*\bid="([^"]+)"[^>]*>/g))elements[match[2]]=Object.assign(new Element(match[1]),{id:match[2]});
+  for(const match of html.matchAll(/<([a-z][a-z0-9]*)\b[^>]*\bid="([^"]+)"[^>]*>/g))elements[match[2]]=Object.assign(new Element(match[1]),{id:match[2],className:match[0].match(/\bclass="([^"]*)"/)?.[1]||''});
   const document=new Element('document');
   document.getElementById=id=>{assert.ok(elements[id],`Missing HTML ID: ${id}`);return elements[id];};
   document.createElement=tag=>new Element(tag);document.createTextNode=text=>Object.assign(new Element('#text'),{textContent:text});
-  const copies=[],intervals=[];
+  const copies=[],intervals=[],windowEvents=new Element('window');
   let reloads=0;
   const c=vm.createContext({console,document,navigator:{clipboard:{writeText:async text=>copies.push(text)},...device},innerWidth:393,innerHeight:851,
     localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
     setInterval:(callback,delay)=>{intervals.push({callback,delay});return intervals.length;},setTimeout:()=>1,clearInterval(){},clearTimeout(){},confirm:()=>false,
     location:{reload(){reloads++;}},
+    addEventListener:windowEvents.addEventListener.bind(windowEvents),
     getComputedStyle:()=>({font:'13px monospace',fontSize:'13px',fontFamily:'monospace',fontWeight:'normal'})});
   for(const match of html.matchAll(/<script src="([^"]+)"/g))vm.runInContext(fs.readFileSync(path.join(root,match[1]),'utf8'),c,{filename:match[1]});
-  return {c,e:elements,copies,storage,document,intervals,get reloads(){return reloads;},run:code=>vm.runInContext(code,c)};
+  return {c,e:elements,copies,storage,document,intervals,windowEvents,get reloads(){return reloads;},run:code=>vm.runInContext(code,c)};
 }
 async function main(){
   // Reproduce an autosave firing while reset's asynchronous reload is pending.
@@ -150,7 +158,7 @@ async function main(){
   mobile.run('clearFishingTimers();state="bite";updateFishingControls();');
   await mobile.document.dispatch('pointerdown',{target:mobile.e.fishButton,pointerType:'mouse'});
   await mobile.e.fishButton.click();
-  await mobile.document.dispatch('keydown',{key:'ArrowDown',target:mobile.e.fightPressureButton,preventDefault(){}});
+  await mobile.document.dispatch('keydown',{key:'ArrowRight',target:mobile.e.fightPressureButton,preventDefault(){}});
   await mobile.document.dispatch('keydown',{key:'ArrowUp',target:mobile.e.fightReelButton,preventDefault(){}});
   assert.deepEqual([...mobile.run('testingEncounter.inputMethods')],['touch','mouse','keyboard']);
   // Clicking copy and setup buttons must not count as fishing mouse input.
@@ -184,6 +192,183 @@ async function main(){
   assert.equal(desktop.run('getTestingDeviceInfo().mobile'),true);
   desktop.c.navigator.userAgent='';
   assert.equal(desktop.run('getTestingDeviceInfo().mobile'),null);
-  console.log('Reset/autosave race, fresh-start dialogue, prestige preservation, UI/copying, saved-result reload, normal-save isolation, device detection, touch/mouse/keyboard mixing, keyboard cast/hook, and per-encounter input reset checks passed.');
+  // Fishing arrows and Space own their browser defaults, including every
+  // repeated keydown. Inputs, copy tools, and non-fishing panels keep theirs.
+  const keys=fixture();
+  keys.run('finishIntro();player.meta.learnedTechniques=["hold_pressure"];setTestingMode(true);');
+  function keyEvent(key,extra={}){return {key,code:key===' '?'Space':key,repeat:false,target:keys.e.fishButton,defaultPrevented:false,preventDefault(){this.defaultPrevented=true;},...extra};}
+  function prepareBite(){keys.run('resetFishing();currentFish=fishTypes.find(f=>f.id==="landlocked_salmon");currentWeight=10;nibbleDepth=12;beginTestingEncounter();state="bite";updateFishingControls();');}
+  prepareBite();
+  assert.equal(keys.e.fishButton.textContent,'HOOK [↑]');
+  const baitBefore=keys.run('player.gear.bait[player.selectedBait]');
+  const hookUp=keyEvent('ArrowUp');await keys.document.dispatch('keydown',hookUp);
+  assert.equal(hookUp.defaultPrevented,true);
+  assert.equal(keys.run('state'),'reeling');
+  assert.equal(keys.run('isReeling'),true,'One Up press must hook and start reeling.');
+  assert.equal(keys.run('fightHoldOwner.key'),'ArrowUp');
+  assert.equal(keys.run('player.gear.bait[player.selectedBait]'),baitBefore-1);
+  const repeatUp=keyEvent('ArrowUp',{repeat:true});await keys.document.dispatch('keydown',repeatUp);
+  assert.equal(repeatUp.defaultPrevented,true);
+  assert.equal(keys.run('player.gear.bait[player.selectedBait]'),baitBefore-1,'Repeat must not hook again.');
+  const pressureRight=keyEvent('ArrowRight');await keys.document.dispatch('keydown',pressureRight);
+  assert.equal(pressureRight.defaultPrevented,true);
+  assert.equal(keys.run('!isReeling&&isHoldingPressure'),true);
+  assert.equal(keys.e.fightPressureButton.textContent,'HOLDING... [→]');
+  await keys.document.dispatch('keyup',keyEvent('ArrowUp'));
+  assert.equal(keys.run('isHoldingPressure'),true,'Up release cannot cancel Right.');
+  const oldDown=keyEvent('ArrowDown');await keys.document.dispatch('keydown',oldDown);
+  assert.equal(oldDown.defaultPrevented,true);
+  await keys.document.dispatch('keyup',keyEvent('ArrowDown'));
+  assert.equal(keys.run('isHoldingPressure'),true,'Down is no longer the pressure key.');
+  const releaseRight=keyEvent('ArrowRight');await keys.document.dispatch('keyup',releaseRight);
+  assert.equal(releaseRight.defaultPrevented,true);
+  assert.equal(keys.run('isReeling||isHoldingPressure'),false);
+  assert.equal(keys.e.fightPressureButton.textContent,'HOLD PRESSURE [→]');
+  await keys.document.dispatch('keydown',keyEvent('ArrowDown'));
+  assert.equal(keys.run('isHoldingPressure'),false);
+
+  // Repeats stay consumed through cast, bite, fight and landing transitions.
+  // An Up key held before a bite must not auto-hook when the bite appears.
+  for(const phase of ['ready','waiting','nibble','bite','reeling','finished']){
+    keys.run(`clearFightHold();state=${JSON.stringify(phase)};`);
+    for(const key of ['ArrowUp','ArrowRight','ArrowDown','ArrowLeft',' ']){
+      const repeat=keyEvent(key,{repeat:true});await keys.document.dispatch('keydown',repeat);
+      assert.equal(repeat.defaultPrevented,true,`${phase}: ${key} repeat could scroll.`);
+      assert.equal(keys.run('state'),phase);
+      assert.equal(keys.run('isReeling||isHoldingPressure'),false);
+      const up=keyEvent(key);await keys.document.dispatch('keyup',up);
+      assert.equal(up.defaultPrevented,true);
+    }
+  }
+  keys.run('resetFishing();updateFishingControls();');
+  const castSpace=keyEvent(' ');await keys.document.dispatch('keydown',castSpace);
+  assert.equal(castSpace.defaultPrevented,true);assert.equal(keys.run('state'),'casting');
+  const castRepeat=keyEvent(' ',{repeat:true});await keys.document.dispatch('keydown',castRepeat);
+  assert.equal(castRepeat.defaultPrevented,true);assert.equal(keys.run('state'),'casting');
+
+  prepareBite();
+  const editableTargets=['input','textarea','select'].map(tag=>new Element(tag));
+  editableTargets.push(Object.assign(new Element('span'),{isContentEditable:true}));
+  editableTargets.push(keys.e.copyLatestTestButton);
+  for(const target of editableTargets)for(const key of ['ArrowUp','ArrowRight','ArrowDown','ArrowLeft',' ']){
+    const event=keyEvent(key,{target});await keys.document.dispatch('keydown',event);
+    assert.equal(event.defaultPrevented,false,`${target.tagName} ${target.id||''}: ${key}`);assert.equal(keys.run('state'),'bite');
+  }
+  for(const modifier of ['altKey','ctrlKey','metaKey','shiftKey']){
+    const modified=keyEvent('ArrowUp',{[modifier]:true});await keys.document.dispatch('keydown',modified);
+    assert.equal(modified.defaultPrevented,false);assert.equal(keys.run('state'),'bite');
+  }
+  keys.e.pierPanel.style.display='none';
+  const elsewhere=keyEvent('ArrowUp');await keys.document.dispatch('keydown',elsewhere);
+  assert.equal(elsewhere.defaultPrevented,false);assert.equal(keys.run('state'),'bite');
+  keys.e.pierPanel.style.display='block';keys.e.testCopyDialog.open=true;
+  const dialogUp=keyEvent('ArrowUp');await keys.document.dispatch('keydown',dialogUp);
+  assert.equal(dialogUp.defaultPrevented,false);assert.equal(keys.run('state'),'bite');
+  keys.e.testCopyDialog.open=false;
+
+  // Focus changes and interruptions release the held key without a stale
+  // repeat reactivating it. H remains a compatibility alias for hooking.
+  await keys.document.dispatch('keydown',keyEvent('ArrowUp'));
+  const editableRelease=keyEvent('ArrowUp',{target:editableTargets[1]});
+  await keys.document.dispatch('keyup',editableRelease);
+  assert.equal(editableRelease.defaultPrevented,false);assert.equal(keys.run('isReeling'),false);
+  await keys.document.dispatch('keydown',keyEvent('ArrowRight'));
+  await keys.windowEvents.dispatch('blur');
+  const afterBlur=keyEvent('ArrowRight',{repeat:true});await keys.document.dispatch('keydown',afterBlur);
+  assert.equal(afterBlur.defaultPrevented,true);assert.equal(keys.run('isHoldingPressure'),false);
+  await keys.document.dispatch('keydown',keyEvent('ArrowUp'));
+  keys.e.pierPanel.style.display='none';await keys.document.dispatch('keyup',keyEvent('ArrowUp'));
+  assert.equal(keys.run('isReeling'),false);keys.e.pierPanel.style.display='block';
+  prepareBite();await keys.document.dispatch('keydown',keyEvent('h'));
+  assert.equal(keys.run('state'),'reeling');assert.equal(keys.run('isReeling'),false);
+
+  // Held controls must survive thumb drift, and only the owning input may end
+  // the hold. Test capture, fallback release, interruptions and fight lifecycle.
+  const holds=fixture(new Map(),{maxTouchPoints:5});
+  holds.run('finishIntro();player.meta.learnedTechniques=["hold_pressure"];setTestingMode(true);');
+  function startHeldFight(){holds.run('resetFishing();currentFish=fishTypes.find(f=>f.id==="landlocked_salmon");currentWeight=10;nibbleDepth=12;beginTestingEncounter();state="bite";hookFish();');}
+  function pointer(id,extra={}){return {pointerId:id,pointerType:'touch',button:0,defaultPrevented:false,preventDefault(){this.defaultPrevented=true;},...extra};}
+  function released(){
+    assert.equal(holds.run('isReeling||isHoldingPressure'),false);
+    assert.equal(holds.run('fightHoldOwner'),null);
+    for(const button of [holds.e.fightReelButton,holds.e.fightPressureButton]){
+      assert.equal(button.attributes['aria-pressed'],'false');
+      assert.equal(button.matches('.is-held'),false);
+    }
+  }
+  startHeldFight();
+  const reelDown=pointer(1);
+  await holds.e.fightReelButton.dispatch('pointerdown',reelDown);
+  assert.equal(reelDown.defaultPrevented,true);
+  assert.equal(holds.run('isReeling'),true);
+  assert.equal(holds.e.fightReelButton.hasPointerCapture(1),true);
+  assert.equal(holds.e.fightReelButton.attributes['aria-pressed'],'true');
+  assert.equal(holds.e.fightReelButton.matches('.is-held'),true);
+  await holds.e.fightReelButton.dispatch('pointerleave',pointer(1));
+  assert.equal(holds.run('isReeling'),true,'Thumb drift must not end a hold.');
+  await holds.document.dispatch('pointerup',pointer(1));
+  released();assert.equal(holds.e.fightReelButton.hasPointerCapture(1),false);
+
+  for(const event of ['pointercancel','lostpointercapture']){
+    await holds.e.fightPressureButton.dispatch('pointerdown',pointer(2));
+    await holds.e.fightPressureButton.dispatch(event,pointer(2));
+    released();
+  }
+  // Newest press wins; releasing an old finger cannot cancel the new action.
+  await holds.e.fightReelButton.dispatch('pointerdown',pointer(3));
+  await holds.e.fightPressureButton.dispatch('pointerdown',pointer(4));
+  assert.equal(holds.e.fightReelButton.hasPointerCapture(3),false);
+  assert.equal(holds.run('!isReeling&&isHoldingPressure'),true);
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])await holds.e.fightReelButton.dispatch(event,pointer(3));
+  assert.equal(holds.run('isHoldingPressure'),true);
+  await holds.e.fightPressureButton.dispatch('pointerup',pointer(4));released();
+
+  // Pointer and keyboard releases likewise cannot clear each other's holds.
+  await holds.e.fightReelButton.dispatch('pointerdown',pointer(5));
+  await holds.document.dispatch('keydown',{key:'ArrowRight',target:holds.e.fightPressureButton,preventDefault(){}});
+  await holds.e.fightReelButton.dispatch('pointerup',pointer(5));
+  assert.equal(holds.run('isHoldingPressure'),true);
+  await holds.e.fightReelButton.dispatch('pointerdown',pointer(6));
+  await holds.document.dispatch('keyup',{key:'ArrowRight'});
+  assert.equal(holds.run('isReeling'),true);
+  await holds.e.fightReelButton.dispatch('pointerup',pointer(6));released();
+  await holds.document.dispatch('keydown',{key:'ArrowUp',target:holds.e.fightReelButton,preventDefault(){}});
+  await holds.document.dispatch('keyup',{key:'ArrowUp'});released();
+
+  // If capture is unavailable, an outside lift still releases the hold.
+  const capture=holds.e.fightReelButton.setPointerCapture;
+  holds.e.fightReelButton.setPointerCapture=()=>{throw Error('Capture unavailable');};
+  await holds.e.fightReelButton.dispatch('pointerdown',pointer(7));
+  assert.equal(holds.run('isReeling'),true);
+  await holds.document.dispatch('pointerup',pointer(7));released();
+  holds.e.fightReelButton.setPointerCapture=capture;
+  await holds.e.fightReelButton.dispatch('pointerdown',pointer(8,{button:2,pointerType:'mouse'}));released();
+
+  for(const event of ['contextmenu','selectstart','dragstart']){
+    const gesture=pointer(9);await holds.e.fightControls.dispatch(event,gesture);
+    assert.equal(gesture.defaultPrevented,true);
+  }
+  for(const interrupt of ['blur','hidden']){
+    await holds.e.fightPressureButton.dispatch('pointerdown',pointer(10));
+    if(interrupt==='blur')await holds.windowEvents.dispatch('blur');
+    else{holds.document.hidden=true;await holds.document.dispatch('visibilitychange');holds.document.hidden=false;}
+    released();
+  }
+  for(const finish of ['landFish();','loseFish("The line snaps.");','resetFishing();','startFight();']){
+    startHeldFight();
+    await holds.e.fightPressureButton.dispatch('pointerdown',pointer(11));
+    holds.run(finish);released();
+    assert.equal(holds.e.fightPressureButton.hasPointerCapture(11),false);
+    startHeldFight();
+    await holds.e.fightReelButton.dispatch('pointerdown',pointer(12));
+    await holds.e.fightPressureButton.dispatch('lostpointercapture',pointer(11));
+    assert.equal(holds.run('isReeling'),true,'Late capture loss must not affect a new fight.');
+    await holds.document.dispatch('pointercancel',pointer(12));released();
+  }
+  startHeldFight();holds.run('player.meta.learnedTechniques=[];');
+  await holds.e.fightPressureButton.dispatch('pointerdown',pointer(13));released();
+  holds.e.testCopyDialog.open=true;
+  await holds.e.fightReelButton.dispatch('pointerdown',pointer(14));released();
+  console.log('UI/copying, save isolation, keyboard/device tracking, captured holds, thumb drift, pointer/keyboard handoffs, cancellation, blur/visibility, gesture suppression, and fight lifecycle checks passed.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

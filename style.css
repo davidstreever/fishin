@@ -147,3 +147,26 @@ body{overflow-anchor:none}
 /* Compact fishing calendar: natural wrapping without splitting date phrases. */
 #fishingHeader{display:block;white-space:normal;line-height:1.4;overflow-wrap:normal;word-break:normal}
 #fishingHeader .headerMoney{margin-left:0;white-space:nowrap}
+
+/* Treat the fight controls as held inputs, including the gaps around them. */
+#fightControls,#fightControls *{
+  touch-action:none;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-user-drag:none;
+}
+#fishingControls{min-height:112px}
+#fightControls{gap:12px}
+.fightPrimaryActions{gap:10px}
+#fightReelButton,#fightPressureButton{
+  box-sizing:border-box;
+  min-height:48px;
+  padding:12px 14px;
+  -webkit-tap-highlight-color:transparent;
+}
+#fightReelButton.is-held,#fightPressureButton.is-held{
+  background:#ddd8cd;
+  border-color:#555;
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.18);
+}
