@@ -174,7 +174,6 @@ body{overflow-anchor:none}
 /* Brief nibble movement and a sustained bite cue, cleared before fighting. */
 @keyframes hooksetNibbleTick{0%,100%{transform:translateX(0)}35%{transform:translateX(5px)}65%{transform:translateX(-2px)}}
 #line.hooksetNibble{animation:hooksetNibbleTick 420ms ease-out}
-#line.hooksetBite{transform:translateX(10px)}
 #line.hooksetBite .lineDot{color:#711f1f}
 
 /* Hook and Reel occupy the same fixed primary slot; Twitch stays secondary. */
