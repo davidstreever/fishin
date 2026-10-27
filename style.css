@@ -148,8 +148,40 @@ body{overflow-anchor:none}
 #fishingHeader{display:block;white-space:normal;line-height:1.4;overflow-wrap:normal;word-break:normal}
 #fishingHeader .headerMoney{margin-left:0;white-space:nowrap}
 
-/* Isolated hookset prototype: brief nibble movement, sustained bite pull. */
+/* Treat the fight controls as held inputs, including the gaps around them. */
+#fightControls,#fightControls *{
+  touch-action:none;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-user-drag:none;
+}
+#fishingControls{min-height:112px}
+#fightControls{gap:12px}
+.fightPrimaryActions{gap:10px}
+#fightReelButton,#fightPressureButton{
+  box-sizing:border-box;
+  min-height:48px;
+  padding:12px 14px;
+  -webkit-tap-highlight-color:transparent;
+}
+#fightReelButton.is-held,#fightPressureButton.is-held{
+  background:#ddd8cd;
+  border-color:#555;
+  box-shadow:inset 0 2px 3px rgba(0,0,0,.18);
+}
+
+/* Brief nibble movement and a sustained bite cue, cleared before fighting. */
 @keyframes hooksetNibbleTick{0%,100%{transform:translateX(0)}35%{transform:translateX(5px)}65%{transform:translateX(-2px)}}
 #line.hooksetNibble{animation:hooksetNibbleTick 420ms ease-out}
 #line.hooksetBite{transform:translateX(10px)}
 #line.hooksetBite .lineDot{color:#711f1f;font-weight:bold}
+
+/* Hook and Reel occupy the same fixed primary slot; Twitch stays secondary. */
+#normalControls,#fightControls{align-items:flex-start}
+.fishingPrimaryActions,.fightPrimaryActions{display:flex;flex-direction:column;flex:1;min-width:0;max-width:240px;gap:10px}
+#fishButton,#fightReelButton{box-sizing:border-box;width:100%;min-height:48px;font-size:18px;padding:12px 14px;white-space:nowrap;margin:0}
+#twitchButton{box-sizing:border-box;min-height:48px;font-size:13px;padding:12px 14px}
+#twitchButton[hidden]{display:none}
+.fishingPrimaryActions,.fishingPrimaryActions *{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent}
+@media(max-width:620px){#fishButton,#fightReelButton{font-size:14px}}

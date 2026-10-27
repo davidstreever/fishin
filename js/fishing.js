@@ -22,7 +22,7 @@ function handleMainButton(){
   // Once a cast has started, its fishing action always wins over a newly
   // reached Work/Sleep boundary. The cast already paid for this time unit.
   // Work/Sleep can only take over after the encounter has fully ended.
-  if((state==="waiting" || state==="nibble") && knowsTechnique("twitch")){ twitchLine(); return; }
+  if(state==="waiting" || state==="nibble"){ if(currentFish)fishSpooked(); return; }
   if(state==="bite"){ hookFish(); return; }
   if(state==="junk"){ landJunk(); return; }
 
@@ -38,8 +38,7 @@ function handleMainButton(){
 function handleSecondaryFishingButton(){
   if(state==="junk"){landJunk();return;}
   if(state==="waiting"){earlyPull();return;}
-  if(state==="nibble"){fishSpooked();return;}
-  if(state==="bite"){hookFish();return;}
+  if(state==="nibble"||state==="bite")pullUpAtNibble();
 }
 
 function getAvailableDepths(){ return locations[world.location]?.availableDepths||["shallow"]; }
@@ -407,6 +406,7 @@ function chooseFightEffort(profile,staminaPercent,fullStrength=false){
   return clamp(raw,0.28,1);
 }
 function startFight(){
+  if(typeof clearFightHold==="function")clearFightHold();
   fightAbilityUseCounts={};
   if(testingEncounter)testingEncounter.hooked=true;
   state="reeling";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;startingDistance=nibbleDepth;fishDistance=startingDistance;maxFightDistance=startingDistance*1.75;fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fightEffort=0;fightEffortBand="rest";debugLastFightCheck="—";debugLastContinueCheck="—";
@@ -424,7 +424,7 @@ function startFight(){
     debugLastFightCheck="QUICK REACTION";
     recordFightAbilityUse("quick_reaction");
   }
-  fightPanel.classList.add("active");normalControls.style.display="none";fightControls.style.display="flex";fightPressureButton.style.display=knowsTechnique("hold_pressure")?"inline-block":"none";message.textContent="Fish on!";hint.textContent="";fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLD PRESSURE [↓]";updateFightDisplay();fightTimer=setInterval(fightTick,100);
+  fightPanel.classList.add("active");normalControls.style.display="none";fightControls.style.display="flex";fightPressureButton.style.display=knowsTechnique("hold_pressure")?"inline-block":"none";message.textContent="Fish on!";hint.textContent="";fightReelButton.textContent="HOLD TO REEL [↑]";fightPressureButton.textContent="HOLD PRESSURE [→]";updateFightDisplay();fightTimer=setInterval(fightTick,100);
 }
 function startSurge(profile,multiplier=1,fullStrength=false,effortOverride=null){
   if(fishStamina<=0 && !fullStrength)return false;
@@ -632,6 +632,7 @@ function drawTensionGrid(){
   }
 }
 function drawFightLine(){
+  clearHooksetLine();
   line.innerHTML="";
   const ratio=maxFightDistance>0?clamp(fishDistance/maxFightDistance,0,1):0;
   // Line length is always line-out / distance remaining. Color alone tells the
@@ -668,6 +669,7 @@ function updateAllTimeBest(fish,weight){
 
 function landFish(){
   recordTestingResult("caught","Landed the fish.");
+  if(typeof clearFightHold==="function")clearFightHold();
   clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");renderDebugFightMeters();if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";catchIdCounter++;
   const trophy=isTrophyFish(currentFish,currentWeight);if(trophy)player.pub.unacknowledgedTrophy=true;const value=currentWeight*currentFish.valuePerPound*(trophy?TROPHY_VALUE_MULTIPLIER:1);
   const rec={id:catchIdCounter,speciesId:currentFish.id,name:currentFish.name,weight:currentWeight,baseValue:value,status:"kept",caughtAt:new Date(),location:world.location,weather:getCurrentWeatherTags(),season:world.season,day:world.seasonDay,time:getTimeLabel(),bait:player.selectedBait,depth:currentDepth,offDepth:currentOffDepth,trophy};
@@ -685,7 +687,7 @@ You caught a trophy ${currentFish.name}!`:"You caught a "+currentFish.name+"!";h
   if(trophy){fishButton.disabled=true;pullUpButton.style.display="none";sleepButton.disabled=true;marketButton.disabled=true;shopButton.disabled=true;}
   saveGame();if(!trophy&&!isWorkDue()&&!isSleepChoice())fishButton.textContent="Cast Again";resetTimer=setTimeout(()=>{if(state==="finished")resetFishing();},trophy?3400:2200);
 }
-function loseFish(reason){recordTestingResult("lost",reason);if(reason==="The line snaps." && fishFighting)player.pub.lineBrokenDuringSurge=true;gainObsession(obsessionForLoss(currentWeight),"big loss");clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");renderDebugFightMeters();if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb. "+reason);message.textContent="You lost the fish.";hint.textContent=reason+"\nYour bait is gone too.";finishFishingFailure();}
+function loseFish(reason){recordTestingResult("lost",reason);if(typeof clearFightHold==="function")clearFightHold();if(reason==="The line snaps." && fishFighting)player.pub.lineBrokenDuringSurge=true;gainObsession(obsessionForLoss(currentWeight),"big loss");clearInterval(fightTimer);state="finished";isReeling=false;isHoldingPressure=false;fightPanel.classList.remove("active");renderDebugFightMeters();if(tensionGrid){tensionGrid.classList.remove("active");}if(tensionInstrument)tensionInstrument.classList.remove("active");if(tensionFillLayer){tensionFillLayer.style.height="0%";tensionFillLayer.classList.remove("danger");}fightControls.style.display="none";normalControls.style.display="block";addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb. "+reason);message.textContent="You lost the fish.";hint.textContent=reason+"\nYour bait is gone too.";finishFishingFailure();}
 function finishFishingFailure(){lineDepth=0;drawLine();updateTimeControls();saveGame();if(!isWorkDue()&&!isSleepChoice())fishButton.textContent="Cast Again";resetTimer=setTimeout(()=>{if(state==="finished")resetFishing();},1800);}
 
 function chooseFish(depth){
@@ -709,10 +711,12 @@ function chooseFish(depth){
 }
 
 function calculateNibbleDepth(weight){const base=5;let pull=Math.round(Math.min(weight,8))+randomNumber(-1,1);return Math.max(base,Math.min(12,base+pull));}
-function drawLine(){line.innerHTML="";line.classList.remove("hooksetNibble","hooksetBite");for(let i=0;i<lineDepth;i++){const dot=document.createElement("span");dot.className="lineDot";dot.textContent="•";line.appendChild(dot);}}
-function animateHooksetLine(kind){line.classList.remove("hooksetNibble","hooksetBite");void line.offsetWidth;line.classList.add(kind==="bite"?"hooksetBite":"hooksetNibble");}
+function drawLine(){clearHooksetLine();line.innerHTML="";for(let i=0;i<lineDepth;i++){const dot=document.createElement("span");dot.className="lineDot";dot.textContent="•";line.appendChild(dot);}}
+function clearHooksetLine(){line.classList.remove("hooksetNibble");line.classList.remove("hooksetBite");}
+function animateHooksetLine(kind){clearHooksetLine();void line.offsetWidth;line.classList.add(kind==="bite"?"hooksetBite":"hooksetNibble");}
 function resetFishing(){
   recordTestingResult("aborted","Encounter reset before completion.");
+  if(typeof clearFightHold==="function")clearFightHold();
   fightAbilityUseCounts={};
   fishSteadyResistance=false;fightSteadySeconds=0;fightRestSeconds=0;
   clearFishingTimers();state="ready";isReeling=false;isHoldingPressure=false;fishFighting=false;fightElapsed=0;tension=0;baselineTension=0;fightEffort=0;fightEffortBand="rest";fightSwing=0;fightSwingVelocity=0;fightSwingTarget=0;fightSwingTargetTimer=0;fightRecoveryLeft=false;activeSpecialAbility=null;forcedSurgeMultiplier=1;quickRecoveryUsed=false;lastGaspUsed=false;fishStamina=100;maxFishStamina=100;surgeStartStaminaPercent=1;debugLastFightCheck="—";debugLastContinueCheck="—";lineDepth=0;currentFish=null;currentWeight=0;currentEncounterType=null;currentJunk=null;currentOffDepth=false;nibbleCount=0;successfulTwitches=0;twitchPrimed=false;pendingNervousnessMultiplier=1;disturbance=0;lastNibbleAt=0;fishHasLeft=false;
@@ -722,3 +726,4 @@ function clearFishingTimers(){clearInterval(lineTimer);clearInterval(fightTimer)
 function randomNumber(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
 function randomDecimal(min,max){return Math.random()*(max-min)+min;}
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+

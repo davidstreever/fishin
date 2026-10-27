@@ -121,7 +121,10 @@
     <div id="depthControls" class="depthControls"></div>
     <div id="fishingControls">
     <div id="normalControls">
-      <button id="fishButton">Cast Line</button>
+      <div class="fishingPrimaryActions">
+        <button id="fishButton" type="button">Cast Line</button>
+        <button id="twitchButton" type="button" hidden>Twitch [J]</button>
+      </div>
       <button id="pullUpButton">Pull Up</button>
       <button id="sleepButton">Sleep</button>
       <button id="quitJobButton">Quit Job</button>
@@ -129,8 +132,8 @@
 
     <div id="fightControls">
       <div class="fightPrimaryActions">
-        <button id="fightReelButton">HOLD TO REEL</button>
-        <button id="fightPressureButton">HOLD PRESSURE</button>
+        <button id="fightReelButton" type="button" aria-pressed="false">HOLD TO REEL</button>
+        <button id="fightPressureButton" type="button" aria-pressed="false">HOLD PRESSURE</button>
       </div>
       <button id="cutLineButton">Cut Line</button>
     </div>
