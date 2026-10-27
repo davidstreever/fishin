@@ -773,7 +773,8 @@ debugAddBaitButton.addEventListener("click",()=>{Object.keys(player.gear.bait).f
 debugAddMoneyButton.addEventListener("click",()=>{player.money+=100;addLog("world","DEBUG: Added $100.");updateDisplays();renderGearInventory();renderShopInventory();saveGame();});
 debugTravelToggle.addEventListener("change",()=>{debugInstantTravel=debugTravelToggle.checked;renderLocationTabs();message.textContent=debugInstantTravel?"Debug instant travel enabled.":"";});
 debugFightMetersToggle.addEventListener("change",()=>{debugFightMeters=debugFightMetersToggle.checked;if(typeof renderDebugFightMeters==="function")renderDebugFightMeters();});
-tensionViewSelect.addEventListener("change",()=>{if(typeof drawTensionGrid==="function")drawTensionGrid();});
+tensionViewSelect.value=DEFAULT_TENSION_VIEW;
+tensionViewSelect.addEventListener("change",()=>{tensionViewOverride=tensionViewSelect.value;if(typeof drawTensionGrid==="function")drawTensionGrid();});
 debugFishStatsToggle.addEventListener("change",()=>{debugFishStats=debugFishStatsToggle.checked;if(typeof renderDebugFightMeters==="function")renderDebugFightMeters();});
 debugTestingToggle.addEventListener("change",()=>setTestingMode(debugTestingToggle.checked));
 copyLatestTestButton.addEventListener("click",()=>copyTestingLogEntries(gameLogEntries.filter(e=>e.type==="test").slice(-1)));

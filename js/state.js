@@ -1,5 +1,8 @@
 // Fishin' — state.js
 
+const DEFAULT_TENSION_VIEW="dial";
+let tensionViewOverride=null;
+
 const world = {
   location:"fishing_hole",
   seasonIndex:0,

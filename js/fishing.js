@@ -595,7 +595,7 @@ function renderDebugFightMeters(){
 function drawTensionGrid(){
   if(!tensionGrid || !tensionFillLayer)return;
   const level=Math.round(clamp(tension,0,100));
-  const view=tensionViewSelect?.value||"spring";
+  const view=tensionViewOverride||DEFAULT_TENSION_VIEW;
   lineStage.dataset.tensionView=view;
   tensionGrid.classList.toggle("active",state==="reeling" && view==="original");
   tensionFillLayer.style.height=level+"%";

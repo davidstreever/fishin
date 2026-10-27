@@ -213,7 +213,7 @@ async function main(){
   await nibble.e.fishButton.click();
   assert.equal(nibble.run('state'),'reeling');
   assert.equal(nibble.e.message.textContent,'Fish on!');
-  assert.equal(nibble.e.lineStage.dataset.tensionView,'spring');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'dial');
   for(const band of ['rest','steady','weak','active','strong']){
     nibble.run(`fishFighting=${!['rest','steady'].includes(band)};fishSteadyResistance=${band==='steady'};fightEffortBand="${band}";drawFightLine();`);
     assert.ok(!nibble.e.line.matches('.hooksetBite'));
@@ -231,7 +231,23 @@ async function main(){
   assert.ok(!nibble.e.line.matches('.hooksetBite'));
 
   assert.ok(!nibble.e.pullUpButton,'Pull Up has been removed from the controls.');
-  assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/<option value="spring" selected>/);
+  assert.equal(nibble.e.tensionViewSelect.value,'dial');
+  // A debug dropdown value alone cannot replace the actual game default.
+  nibble.e.tensionViewSelect.value='spring';
+  nibble.run('state="reeling";drawTensionGrid();');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'dial');
+  nibble.e.tensionViewSelect.value='original';
+  await nibble.e.tensionViewSelect.dispatch('change');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'original');
+  assert.ok(nibble.e.tensionGrid.matches('.active'));
+  assert.ok(!nibble.e.tensionInstrument.matches('.active'));
+  nibble.e.tensionViewSelect.value='dial';
+  await nibble.e.tensionViewSelect.dispatch('change');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'dial');
+  assert.ok(nibble.e.tensionInstrument.matches('.active'));
+  const lineCss=fs.readFileSync(path.join(root,'style.css'),'utf8');
+  assert.match(lineCss,/left:80px;width:12px;text-align:center/);
+  assert.doesNotMatch(lineCss,/\.lineDot\.effort-strong\{[^}]*font-weight/);
   for(const phase of ['waiting','nibble'])for(const withFish of [true,false]){
     prepareNibble();
     nibble.run(`state="${phase}";${withFish?'':'currentFish=null;'}updateFishingControls();`);
