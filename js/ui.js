@@ -10,7 +10,7 @@ const rodGearSelect=document.getElementById("rodGearSelect"),reelGearSelect=docu
 const sky=document.getElementById("sky"),water=document.getElementById("water"),lineStage=document.getElementById("lineStage"),tensionGrid=document.getElementById("tensionGrid"),tensionFillLayer=document.getElementById("tensionFillLayer"),tensionInstrument=document.getElementById("tensionInstrument"),line=document.getElementById("line"),message=document.getElementById("message"),hint=document.getElementById("hint");
 const twitchButton=document.getElementById("twitchButton");
 const fightPanel=document.getElementById("fightPanel");
-const normalControls=document.getElementById("normalControls"),fightControls=document.getElementById("fightControls"),fishButton=document.getElementById("fishButton"),pullUpButton=document.getElementById("pullUpButton"),sleepButton=document.getElementById("sleepButton"),quitJobButton=document.getElementById("quitJobButton"),journalButton=document.getElementById("journalButton"),journalReturnButton=document.getElementById("journalReturnButton"),fightReelButton=document.getElementById("fightReelButton"),fightPressureButton=document.getElementById("fightPressureButton"),cutLineButton=document.getElementById("cutLineButton");
+const normalControls=document.getElementById("normalControls"),fightControls=document.getElementById("fightControls"),fishButton=document.getElementById("fishButton"),sleepButton=document.getElementById("sleepButton"),quitJobButton=document.getElementById("quitJobButton"),journalButton=document.getElementById("journalButton"),journalReturnButton=document.getElementById("journalReturnButton"),fightReelButton=document.getElementById("fightReelButton"),fightPressureButton=document.getElementById("fightPressureButton"),cutLineButton=document.getElementById("cutLineButton");
 const marketButton=document.getElementById("marketButton"),shopButton=document.getElementById("shopButton"),marketReturnButton=document.getElementById("marketReturnButton"),shopReturnButton=document.getElementById("shopReturnButton"),pubButton=document.getElementById("pubButton"),pubReturnButton=document.getElementById("pubReturnButton"),pubTalkButton=document.getElementById("pubTalkButton"),pubBartenderTalkButton=document.getElementById("pubBartenderTalkButton"),pubTalkActions=document.getElementById("pubTalkActions"),pubBartenderActions=document.getElementById("pubBartenderActions"),pubCharacters=document.getElementById("pubCharacters"),pubExitActions=document.getElementById("pubExitActions"),pubLeaveButton=document.getElementById("pubLeaveButton"),pubMessage=document.getElementById("pubMessage"),pubCalendarDisplay=document.getElementById("pubCalendarDisplay"),pubMoneyDisplay=document.getElementById("pubMoneyDisplay");
 const marketMessage=document.getElementById("marketMessage"),shopMessage=document.getElementById("shopMessage"),marketInventory=document.getElementById("marketInventory"),sellAllButton=document.getElementById("sellAllButton"),shopInventory=document.getElementById("shopInventory");
 const gearInventory=document.getElementById("gearInventory"),creel=document.getElementById("creel"),gameLog=document.getElementById("gameLog"),journalSpecies=document.getElementById("journalSpecies"),journalEntry=document.getElementById("journalEntry"),journalWaterTabs=document.getElementById("journalWaterTabs"),inventoryCountDisplay=document.getElementById("inventoryCount"),inventoryLimitDisplay=document.getElementById("inventoryLimit"),totalWeightDisplay=document.getElementById("totalWeight"),totalValueDisplay=document.getElementById("totalValue");
@@ -84,19 +84,19 @@ function updateFishingControls(){
   if(activeEncounter){
     if(state==='waiting'||state==='nibble'){
       fishButton.disabled=false; fishButton.textContent='HOOK [↑]';
-      pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Pull Up [L]'; return;
+      return;
     }
     if(state==='bite'){
       fishButton.disabled=false; fishButton.textContent='HOOK [↑]';
-      pullUpButton.style.display='inline-block'; pullUpButton.disabled=false; pullUpButton.textContent='Pull Up [L]'; return;
+      return;
     }
     if(state==='junk'){
       fishButton.disabled=false; fishButton.textContent='Pull Up';
-      pullUpButton.style.display='none'; return;
+       return;
     }
-    fishButton.disabled=true; pullUpButton.style.display='none'; return;
+    fishButton.disabled=true;  return;
   }
-  pullUpButton.style.display='none';
+  
   if(isWorkDue()){fishButton.disabled=false;fishButton.textContent='Go to Work [W]';return;}
   if(isSleepChoice()){
     if(canNightFish()){fishButton.disabled=false;fishButton.textContent='Keep Fishing';}
@@ -671,7 +671,7 @@ function closeNewspaper(){newspaperPanel.style.display="none";returnToFishing();
 function stepNewspaperIssue(direction){const issues=ownedIssuesChronological(),issue=displayedNewspaperIssue(),index=issues.findIndex(i=>i.key===issue?.key),next=issues[index+direction];if(next)showNewspaperEdition(next);}
 newspaperFishingLink.addEventListener("click",openNewspaper);newspaperReturnButton.addEventListener("click",closeNewspaper);forecastReadButton.addEventListener("click",()=>{const issue=displayedNewspaperIssue();if(issue)renderForecast(issue);});newspaperIssueSelect.addEventListener("change",()=>showNewspaperEdition(findOwnedIssue(newspaperIssueSelect.value)));previousIssueButton.addEventListener("click",()=>stepNewspaperIssue(-1));nextIssueButton.addEventListener("click",()=>stepNewspaperIssue(1));
 twitchButton.addEventListener("click",twitchLine);
-fishButton.addEventListener("click",handleMainButton);pullUpButton.addEventListener("click",handleSecondaryFishingButton);sleepButton.addEventListener("click",()=>{world.period==="Night"?goToSleep():catchUpSleep();});quitJobButton.addEventListener("click",quitJob);journalButton.addEventListener("click",openJournal);pubButton.addEventListener("click",openPub);pubReturnButton.addEventListener("click",closePub);pubTalkButton.addEventListener("click",()=>{if(pubTalkActions.style.display==="block")pubTalkActions.style.display="none";else showOldTimerTalk();});pubBartenderTalkButton.addEventListener("click",()=>{if(pubBartenderActions.style.display==="block")pubBartenderActions.style.display="none";else showBartenderTalk();});pubLeaveButton.addEventListener("click",closePub);journalReturnButton.addEventListener("click",closeJournal);marketButton.addEventListener("click",()=>goToLocation("market"));shopButton.addEventListener("click",()=>goToLocation("shop"));marketReturnButton.addEventListener("click",returnToFishing);shopReturnButton.addEventListener("click",returnToFishing);sellAllButton.addEventListener("click",sellAllFish);
+fishButton.addEventListener("click",handleMainButton);sleepButton.addEventListener("click",()=>{world.period==="Night"?goToSleep():catchUpSleep();});quitJobButton.addEventListener("click",quitJob);journalButton.addEventListener("click",openJournal);pubButton.addEventListener("click",openPub);pubReturnButton.addEventListener("click",closePub);pubTalkButton.addEventListener("click",()=>{if(pubTalkActions.style.display==="block")pubTalkActions.style.display="none";else showOldTimerTalk();});pubBartenderTalkButton.addEventListener("click",()=>{if(pubBartenderActions.style.display==="block")pubBartenderActions.style.display="none";else showBartenderTalk();});pubLeaveButton.addEventListener("click",closePub);journalReturnButton.addEventListener("click",closeJournal);marketButton.addEventListener("click",()=>goToLocation("market"));shopButton.addEventListener("click",()=>goToLocation("shop"));marketReturnButton.addEventListener("click",returnToFishing);shopReturnButton.addEventListener("click",returnToFishing);sellAllButton.addEventListener("click",sellAllFish);
 let fightHoldOwner=null;
 function renderFightHoldButtons(){
   const reeling=state==="reeling"&&isReeling,pressure=state==="reeling"&&isHoldingPressure;
@@ -724,7 +724,7 @@ cutLineButton.addEventListener("click",()=>{if(state==="reeling")loseFish("You c
 document.addEventListener("pointerdown",e=>{
   if(testCopyDialog.open)return;
   const button=e.target?.closest?.("button");
-  if(button && !button.disabled && ["fishButton","twitchButton","pullUpButton","fightReelButton","fightPressureButton","cutLineButton"].includes(button.id))trackTestingControlMethod(e.pointerType);
+  if(button && !button.disabled && ["fishButton","twitchButton","fightReelButton","fightPressureButton","cutLineButton"].includes(button.id))trackTestingControlMethod(e.pointerType);
 },true);
 function keyboardActivate(button){if(!button||button.disabled||button.offsetParent===null)return;trackTestingControlMethod("keyboard");button.click();}
 function keyboardStartReel(){if(beginFightHold("reel",{type:"keyboard",key:"ArrowUp"}))trackTestingControlMethod("keyboard");}
@@ -757,7 +757,6 @@ document.addEventListener("keydown",e=>{
   if((e.key==="h"||e.key==="H")&&["waiting","nibble","bite"].includes(state)){keyboardActivate(fishButton);return;}
   if((e.key==="j"||e.key==="J")&&["waiting","nibble"].includes(state)&&knowsTechnique("twitch")){keyboardActivate(twitchButton);return;}
   if((e.key==="k"||e.key==="K")&&state==="reeling"){keyboardActivate(cutLineButton);return;}
-  if((e.key==="l"||e.key==="L")&&["waiting","nibble","bite"].includes(state)){keyboardActivate(pullUpButton);return;}
   if((e.key==="s"||e.key==="S")&&sleepButton.offsetParent!==null&&!sleepButton.disabled){keyboardActivate(sleepButton);return;}
   if((e.key==="w"||e.key==="W")&&isWorkDue()&&["ready","finished"].includes(state)){keyboardActivate(fishButton);return;}
 },true);

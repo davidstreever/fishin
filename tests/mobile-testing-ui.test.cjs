@@ -204,12 +204,16 @@ async function main(){
   await nibble.document.dispatch('keydown',{key:'j',target:nibble.e.twitchButton});
   assert.equal(nibble.run('twitchPrimed'),true,'J must Twitch rather than set the hook.');
   assert.equal(nibble.run('state'),'nibble');
+  nibble.e.message.textContent='Old cast message';
   nibble.run('fishBites();');
+  assert.equal(nibble.e.message.textContent,'','The bite is communicated by the line.');
   assert.equal(nibble.e.twitchButton.hidden,true);
   assert.ok(nibble.e.line.matches('.hooksetBite'));
   assert.ok(!nibble.e.line.matches('.hooksetNibble'));
   await nibble.e.fishButton.click();
   assert.equal(nibble.run('state'),'reeling');
+  assert.equal(nibble.e.message.textContent,'Fish on!');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'spring');
   for(const band of ['rest','steady','weak','active','strong']){
     nibble.run(`fishFighting=${!['rest','steady'].includes(band)};fishSteadyResistance=${band==='steady'};fightEffortBand="${band}";drawFightLine();`);
     assert.ok(!nibble.e.line.matches('.hooksetBite'));
@@ -217,14 +221,31 @@ async function main(){
     assert.ok(nibble.e.line.children.every(dot=>dot.matches('.effort-'+band)));
   }
   prepareNibble();await nibble.e.fishButton.click();
-  assert.equal(nibble.run('state'),'waiting','Hooking a nibble should spook, never Twitch.');
+  assert.equal(nibble.run('state'),'retracting','An early hook ends the cast.');
   prepareNibble();await nibble.document.dispatch('keydown',{key:'ArrowUp',target:nibble.e.fishButton});
-  assert.equal(nibble.run('state'),'waiting','Up uses the same early-hook rule.');
+  assert.equal(nibble.run('state'),'retracting','Up uses the same early-hook rule.');
   nibble.run('player.meta.learnedTechniques=[];state="waiting";updateFishingControls();');
   assert.equal(nibble.e.twitchButton.hidden,true);
   assert.equal(nibble.e.fishButton.disabled,false);
   nibble.run('animateHooksetLine("bite");resetFishing();');
   assert.ok(!nibble.e.line.matches('.hooksetBite'));
+
+  assert.ok(!nibble.e.pullUpButton,'Pull Up has been removed from the controls.');
+  assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/<option value="spring" selected>/);
+  for(const phase of ['waiting','nibble'])for(const withFish of [true,false]){
+    prepareNibble();
+    nibble.run(`state="${phase}";${withFish?'':'currentFish=null;'}updateFishingControls();`);
+    const before=nibble.run('player.gear.bait[player.selectedBait]');
+    await nibble.e.fishButton.click();
+    assert.equal(nibble.run('state'),'retracting');
+    assert.equal(nibble.run('player.gear.bait[player.selectedBait]'),before-1);
+    await nibble.e.fishButton.click();
+    assert.equal(nibble.run('player.gear.bait[player.selectedBait]'),before-1,'Repeated presses cannot consume more bait.');
+  }
+  prepareNibble();
+  nibble.run('Math.random=()=>0.99;message.textContent="Old cast message";firstNibble();');
+  assert.equal(nibble.e.message.textContent,'','A nibble needs no announcement.');
+  assert.ok(nibble.e.line.matches('.hooksetNibble'));
 
   // Fishing arrows and Space own their browser defaults, including every
   // repeated keydown. Inputs, copy tools, and non-fishing panels keep theirs.
