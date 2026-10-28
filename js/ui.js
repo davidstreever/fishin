@@ -78,7 +78,7 @@ function updateDisplays(){
 }
 
 function updateFishingControls(){
-  twitchButton.hidden=!["waiting","nibble"].includes(state)||!knowsTechnique('twitch');
+  twitchButton.hidden=!["waiting","nibble","bite"].includes(state)||!knowsTechnique('twitch');
   twitchButton.disabled=twitchButton.hidden;
   const activeEncounter=!['ready','finished'].includes(state);
   if(activeEncounter){
@@ -755,7 +755,7 @@ document.addEventListener("keydown",e=>{
     return;
   }
   if((e.key==="h"||e.key==="H")&&["waiting","nibble","bite"].includes(state)){keyboardActivate(fishButton);return;}
-  if((e.key==="j"||e.key==="J")&&["waiting","nibble"].includes(state)&&knowsTechnique("twitch")){keyboardActivate(twitchButton);return;}
+  if((e.key==="j"||e.key==="J")&&["waiting","nibble","bite"].includes(state)&&knowsTechnique("twitch")){keyboardActivate(twitchButton);return;}
   if((e.key==="k"||e.key==="K")&&state==="reeling"){keyboardActivate(cutLineButton);return;}
   if((e.key==="s"||e.key==="S")&&sleepButton.offsetParent!==null&&!sleepButton.disabled){keyboardActivate(sleepButton);return;}
   if((e.key==="w"||e.key==="W")&&isWorkDue()&&["ready","finished"].includes(state)){keyboardActivate(fishButton);return;}
@@ -788,7 +788,7 @@ debugMoonSelect.addEventListener("change",()=>{debugMoonPhase=debugMoonSelect.va
 debugWaterSelect.addEventListener("change",()=>{debugWaterMotion=debugWaterSelect.value?Number(debugWaterSelect.value):null;waterFrame=0;updateDisplays();startEnvironmentAnimations();});
 debugSeasonSelect.addEventListener("change",()=>{const s=debugSeasonSelect.value;if(!s)return;world.season=s;world.seasonIndex=seasons.indexOf(s);world.seasonDay=1;world.period="Morning";world.timeUnits=0;world.nightFishing=false;generateSeasonWeather();debugSeasonSelect.value="";resetFishing();refreshLocationUI();startEnvironmentAnimations();saveGame();});
 
-setInterval(()=>{document.querySelectorAll(".lineDot").forEach(dot=>{Math.random()<.18?dot.classList.add("dim"):dot.classList.remove("dim");});},180);
+setInterval(()=>{if(state==="bite")return;document.querySelectorAll(".lineDot").forEach(dot=>{Math.random()<.18?dot.classList.add("dim"):dot.classList.remove("dim");});},180);
 
 inventoryLimitDisplay.textContent=getInventoryLimit();
 const loadedSave=loadGame();
@@ -801,3 +801,4 @@ state="ready";
 refreshLocationUI();updateDisplays();updateInventoryDisplay();renderGearInventory();renderShopInventory();resetFishing();startEnvironmentAnimations();
 if(!world.introSeen) showIntroStep(1);
 setInterval(saveGame,5000);
+
