@@ -192,6 +192,78 @@ async function main(){
   assert.equal(desktop.run('getTestingDeviceInfo().mobile'),true);
   desktop.c.navigator.userAgent='';
   assert.equal(desktop.run('getTestingDeviceInfo().mobile'),null);
+  // The bite cue must never mask fight effort colors or leave the line offset.
+  const nibble=fixture();
+  nibble.run('finishIntro();player.meta.learnedTechniques=["hold_pressure","twitch"];setTestingMode(true);');
+  function prepareNibble(){nibble.run('resetFishing();currentFish=fishTypes.find(f=>f.id==="landlocked_salmon");currentWeight=10;nibbleDepth=12;lineDepth=12;beginTestingEncounter();state="nibble";lastNibbleAt=Date.now();drawLine();animateHooksetLine("nibble");updateFishingControls();');}
+  prepareNibble();
+  assert.equal(nibble.e.fishButton.textContent,'HOOK [↑]');
+  assert.equal(nibble.e.fishButton.disabled,false);
+  assert.equal(nibble.e.twitchButton.hidden,false);
+  assert.ok(nibble.e.line.matches('.hooksetNibble'));
+  await nibble.document.dispatch('keydown',{key:'j',target:nibble.e.twitchButton});
+  assert.equal(nibble.run('twitchPrimed'),true,'J must Twitch rather than set the hook.');
+  assert.equal(nibble.run('state'),'nibble');
+  nibble.e.message.textContent='Old cast message';
+  nibble.run('fishBites();');
+  assert.equal(nibble.e.message.textContent,'','The bite is communicated by the line.');
+  assert.equal(nibble.e.twitchButton.hidden,true);
+  assert.ok(nibble.e.line.matches('.hooksetBite'));
+  assert.ok(!nibble.e.line.matches('.hooksetNibble'));
+  assert.ok(nibble.e.line.children.every(dot=>dot.className==='lineDot'),'Before hooking the line must not reveal effort.');
+  await nibble.e.fishButton.click();
+  assert.equal(nibble.run('state'),'reeling');
+  assert.equal(nibble.e.message.textContent,'Fish on!');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'dial');
+  for(const band of ['rest','steady','weak','active','strong']){
+    nibble.run(`fishFighting=${!['rest','steady'].includes(band)};fishSteadyResistance=${band==='steady'};fightEffortBand="${band}";drawFightLine();`);
+    assert.ok(!nibble.e.line.matches('.hooksetBite'));
+    assert.ok(!nibble.e.line.matches('.hooksetNibble'));
+    assert.ok(nibble.e.line.children.every(dot=>dot.matches('.effort-'+band)));
+  }
+  prepareNibble();await nibble.e.fishButton.click();
+  assert.equal(nibble.run('state'),'retracting','An early hook ends the cast.');
+  prepareNibble();await nibble.document.dispatch('keydown',{key:'ArrowUp',target:nibble.e.fishButton});
+  assert.equal(nibble.run('state'),'retracting','Up uses the same early-hook rule.');
+  nibble.run('player.meta.learnedTechniques=[];state="waiting";updateFishingControls();');
+  assert.equal(nibble.e.twitchButton.hidden,true);
+  assert.equal(nibble.e.fishButton.disabled,false);
+  nibble.run('animateHooksetLine("bite");resetFishing();');
+  assert.ok(!nibble.e.line.matches('.hooksetBite'));
+
+  assert.ok(!nibble.e.pullUpButton,'Pull Up has been removed from the controls.');
+  assert.equal(nibble.e.tensionViewSelect.value,'dial');
+  // A debug dropdown value alone cannot replace the actual game default.
+  nibble.e.tensionViewSelect.value='spring';
+  nibble.run('state="reeling";drawTensionGrid();');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'dial');
+  nibble.e.tensionViewSelect.value='original';
+  await nibble.e.tensionViewSelect.dispatch('change');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'original');
+  assert.ok(nibble.e.tensionGrid.matches('.active'));
+  assert.ok(!nibble.e.tensionInstrument.matches('.active'));
+  nibble.e.tensionViewSelect.value='dial';
+  await nibble.e.tensionViewSelect.dispatch('change');
+  assert.equal(nibble.e.lineStage.dataset.tensionView,'dial');
+  assert.ok(nibble.e.tensionInstrument.matches('.active'));
+  const lineCss=fs.readFileSync(path.join(root,'style.css'),'utf8');
+  assert.match(lineCss,/left:80px;width:12px;text-align:center/);
+  assert.doesNotMatch(lineCss,/\.lineDot\.effort-strong\{[^}]*font-weight/);
+  for(const phase of ['waiting','nibble'])for(const withFish of [true,false]){
+    prepareNibble();
+    nibble.run(`state="${phase}";${withFish?'':'currentFish=null;'}updateFishingControls();`);
+    const before=nibble.run('player.gear.bait[player.selectedBait]');
+    await nibble.e.fishButton.click();
+    assert.equal(nibble.run('state'),'retracting');
+    assert.equal(nibble.run('player.gear.bait[player.selectedBait]'),before-1);
+    await nibble.e.fishButton.click();
+    assert.equal(nibble.run('player.gear.bait[player.selectedBait]'),before-1,'Repeated presses cannot consume more bait.');
+  }
+  prepareNibble();
+  nibble.run('Math.random=()=>0.99;message.textContent="Old cast message";firstNibble();');
+  assert.equal(nibble.e.message.textContent,'','A nibble needs no announcement.');
+  assert.ok(nibble.e.line.matches('.hooksetNibble'));
+
   // Fishing arrows and Space own their browser defaults, including every
   // repeated keydown. Inputs, copy tools, and non-fishing panels keep theirs.
   const keys=fixture();
