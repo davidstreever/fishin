@@ -171,9 +171,16 @@ body{overflow-anchor:none}
   box-shadow:inset 0 2px 3px rgba(0,0,0,.18);
 }
 
-/* Nibbles shake; a bite goes still. Effort colors appear only after hooking. */
+/* Nibbles shake and return; a bite pulls down and holds until the window ends.
+   Anchor the top so the line stretches rather than shifting away from the rod.
+   Effort colors appear only after hooking. */
 @keyframes hooksetNibbleTick{0%,100%{transform:translateX(0)}35%{transform:translateX(5px)}65%{transform:translateX(-2px)}}
 #line.hooksetNibble{animation:hooksetNibbleTick 420ms ease-out}
+@keyframes hooksetBiteTug{0%{transform:scaleY(1)}60%{transform:scaleY(1.18)}100%{transform:scaleY(1.14)}}
+#line.hooksetBite{transform-origin:top center;animation:hooksetBiteTug 220ms ease-out forwards}
+@media(prefers-reduced-motion:reduce){
+  #line.hooksetBite{animation:none;transform:scaleY(1.14)}
+}
 
 /* Hook and Reel occupy the same fixed primary slot; Twitch stays secondary. */
 #normalControls,#fightControls{align-items:flex-start}
