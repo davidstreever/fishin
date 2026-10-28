@@ -210,6 +210,7 @@ async function main(){
   assert.equal(nibble.e.twitchButton.hidden,true);
   assert.ok(nibble.e.line.matches('.hooksetBite'));
   assert.ok(!nibble.e.line.matches('.hooksetNibble'));
+  assert.ok(nibble.e.line.children.every(dot=>dot.className==='lineDot'),'Before hooking the line must not reveal effort.');
   await nibble.e.fishButton.click();
   assert.equal(nibble.run('state'),'reeling');
   assert.equal(nibble.e.message.textContent,'Fish on!');
