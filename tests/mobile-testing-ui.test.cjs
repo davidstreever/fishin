@@ -205,15 +205,27 @@ async function main(){
   assert.equal(nibble.run('twitchPrimed'),true,'J must Twitch rather than set the hook.');
   assert.equal(nibble.run('state'),'nibble');
   nibble.e.message.textContent='Old cast message';
+  nibble.e.line.children.forEach(dot=>dot.classList.add("dim"));
   nibble.run('fishBites();');
   assert.equal(nibble.e.message.textContent,'','The bite is communicated by the line.');
-  assert.equal(nibble.e.twitchButton.hidden,true);
+  assert.equal(nibble.e.twitchButton.hidden,false);
+  assert.equal(nibble.e.twitchButton.disabled,false);
+  assert.equal(nibble.run("lineDepth"),9);
+  assert.equal(nibble.run("nibbleDepth"),12,"Visual bite depth must not change fight distance.");
+  await nibble.document.dispatch("keydown",{key:"j",target:nibble.e.twitchButton});
+  assert.equal(nibble.run("state"),"bite","Twitch stays usable without hooking.");
+  nibble.document.querySelectorAll=selector=>selector===".lineDot"?nibble.e.line.children:[];
+  nibble.run("Math.random=()=>0;");
+  nibble.intervals.find(timer=>timer.delay===180).callback();
+  assert.ok(nibble.e.line.children.every(dot=>!dot.matches(".dim")),"Bite dots stay steady.");
   assert.ok(nibble.e.line.matches('.hooksetBite'));
   assert.ok(!nibble.e.line.matches('.hooksetNibble'));
   assert.ok(nibble.e.line.children.every(dot=>dot.className==='lineDot'),'Before hooking the line must not reveal effort.');
   await nibble.e.fishButton.click();
   assert.equal(nibble.run('state'),'reeling');
   assert.equal(nibble.e.message.textContent,'Fish on!');
+  assert.equal(nibble.e.twitchButton.hidden,true);
+  assert.equal(nibble.run("startingDistance"),12);
   assert.equal(nibble.e.lineStage.dataset.tensionView,'dial');
   for(const band of ['rest','steady','weak','active','strong']){
     nibble.run(`fishFighting=${!['rest','steady'].includes(band)};fishSteadyResistance=${band==='steady'};fightEffortBand="${band}";drawFightLine();`);
@@ -263,6 +275,7 @@ async function main(){
   nibble.run('Math.random=()=>0.99;message.textContent="Old cast message";firstNibble();');
   assert.equal(nibble.e.message.textContent,'','A nibble needs no announcement.');
   assert.ok(nibble.e.line.matches('.hooksetNibble'));
+  assert.equal(nibble.run("lineDepth"),6,"Nibbles stay short regardless of fish size.");
 
   // Fishing arrows and Space own their browser defaults, including every
   // repeated keydown. Inputs, copy tools, and non-fishing panels keep theirs.
@@ -444,3 +457,4 @@ async function main(){
   console.log('UI/copying, save isolation, keyboard/device tracking, captured holds, thumb drift, pointer/keyboard handoffs, cancellation, blur/visibility, gesture suppression, and fight lifecycle checks passed.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
+

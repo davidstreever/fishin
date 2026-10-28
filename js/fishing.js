@@ -224,7 +224,8 @@ function getNibbleProbabilities(nibbleNumber=nibbleCount,assumePrimed=twitchPrim
 }
 function firstNibble(){
   if(fishHasLeft||!currentFish)return;
-  state="nibble";message.textContent="";nibbleCount++;lastNibbleAt=Date.now();lineDepth=nibbleDepth;drawLine();animateHooksetLine("nibble");updateFishingControls();
+  // Keep the visual nibble shallow; nibbleDepth still sets the real fight distance.
+  state="nibble";message.textContent="";nibbleCount++;lastNibbleAt=Date.now();lineDepth=CAST_DEPTH+1;drawLine();animateHooksetLine("nibble");updateFishingControls();
   resolveNibble();
 }
 function resolveNibble(){
@@ -299,8 +300,8 @@ function earlyHook(){
 function addLostFishLog(){recordTestingResult("pulled_up","Set the hook before a bite.");gainObsession(obsessionForLoss(currentWeight),"the one that got away");addLog("catch","Lost "+currentFish.name+" — "+currentWeight.toFixed(2)+" lb.");}
 function retractLine(){fishButton.disabled=true;lineTimer=setInterval(()=>{lineDepth--;drawLine();if(lineDepth<=0){clearInterval(lineTimer);resetFishing();}},100);}
 
-function fishBites(){if(state!=="nibble")return;state="bite";message.textContent="";animateHooksetLine("bite");updateFishingControls();clearTimeout(biteTimer);biteTimer=setTimeout(missHook,currentFish.hookWindow);}
-function hookFish(){if(state!=="bite")return;clearTimeout(biteTimer);clearInterval(disturbanceTimer);consumeBait();startFight();}
+function fishBites(){if(state!=="nibble")return;state="bite";message.textContent="";lineDepth=CAST_DEPTH+4;drawLine();animateHooksetLine("bite");updateFishingControls();clearTimeout(biteTimer);biteTimer=setTimeout(missHook,currentFish.hookWindow);}
+function hookFish(){if(state!=="bite")return;clearTimeout(biteTimer);clearInterval(disturbanceTimer);consumeBait();startFight();updateFishingControls();}
 function missHook(){
   if(state==="bite")recordTestingResult("missed_hook","Hook window expired.");
   if(state!=="bite")return;gainObsession(obsessionForLoss(currentWeight),"missed big fish");clearInterval(disturbanceTimer);consumeBait();state="finished";
@@ -706,4 +707,5 @@ function clearFishingTimers(){clearInterval(lineTimer);clearInterval(fightTimer)
 function randomNumber(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
 function randomDecimal(min,max){return Math.random()*(max-min)+min;}
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+
 
