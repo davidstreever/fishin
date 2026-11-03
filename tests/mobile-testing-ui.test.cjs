@@ -55,7 +55,58 @@ function fixture(storage=new Map(),device={}){
   for(const match of html.matchAll(/<script src="([^"]+)"/g))vm.runInContext(fs.readFileSync(path.join(root,match[1]),'utf8'),c,{filename:match[1]});
   return {c,e:elements,copies,storage,document,intervals,timeouts,windowEvents,get reloads(){return reloads;},run:code=>vm.runInContext(code,c)};
 }
+// Advance encounter time without real delays; every due timeout uses the actual game callback.
+function timedNibble(priorNibbles=0){
+  const f=fixture();
+  f.run('finishIntro();setTestingMode(true);');
+  const pending=new Map();let timerId=10000;
+  f.c.clockTime=0;f.c.rolls=[];
+  f.c.setTimeout=(callback,delay)=>{const id=++timerId;pending.set(id,{callback,at:f.c.clockTime+delay});return id;};
+  f.c.clearTimeout=id=>pending.delete(id);
+  f.run('Date.now=()=>clockTime;Math.random=()=>rolls.shift()??0.99;currentFish={...fishTypes.find(f=>f.id==="largemouth_bass"),nibbleBehavior:{baseBite:0.1,biteGrowth:0.4,baseNervousness:0.4,nervousnessGrowth:0,twitchResponse:1}};currentWeight=4;nibbleDepth=9;');
+  f.run(`nibbleCount=${priorNibbles};firstNibble();`);
+  f.advance=target=>{
+    while(true){
+      const next=[...pending].filter(([,timer])=>timer.at<=target).sort((a,b)=>a[1].at-b[1].at)[0];
+      if(!next)break;
+      const [id,timer]=next;pending.delete(id);f.c.clockTime=timer.at;timer.callback();
+    }
+    f.c.clockTime=target;
+  };
+  return f;
+}
 async function main(){
+  // A Twitch late in the full response window changes this nibble's bite odds.
+  const response=timedNibble();
+  response.advance(250);
+  assert.equal(response.run('state'),'nibble','The old quarter-second check must not fire.');
+  response.advance(1100);response.run('twitchLine();');
+  response.c.rolls=[0.3]; // Above the original 0.1 bite chance; below the Twitch-raised 0.5.
+  response.advance(1199);assert.equal(response.run('state'),'nibble');
+  response.advance(1200);assert.equal(response.run('state'),'bite');
+  assert.equal(response.run('twitchPrimed'),false,'Suppression is consumed by the current check.');
+  const hookWindow=response.run('currentFish.hookWindow');
+  response.advance(1200+hookWindow-1);assert.equal(response.run('state'),'bite');
+  response.advance(1200+hookWindow);assert.equal(response.run('state'),'finished','The hook window starts when the fish bites.');
+
+  // The same leave roll causes departure without Twitch, but survives with Twitch.
+  for(const twitch of [false,true]){
+    const leave=timedNibble(1);
+    leave.advance(900);if(twitch)leave.run('twitchLine();');
+    leave.c.rolls=[0.99,0.1];
+    leave.advance(1200);
+    assert.equal(leave.run('state'),twitch?'nibble':'waiting');
+    assert.equal(leave.run('twitchPrimed'),false);
+    assert.equal(leave.run('pendingNervousnessMultiplier'),1);
+  }
+  const freeLook=timedNibble();freeLook.c.rolls=[0.99,0];freeLook.advance(1200);
+  assert.equal(freeLook.run('state'),'nibble','First nibble remains a free look without departure risk.');
+  for(const end of ['resetFishing();','earlyHook();','fishSpooked();']){
+    const cancelled=timedNibble(1);cancelled.advance(700);cancelled.run(end);
+    const stateAfter=cancelled.run('state');cancelled.advance(1200);
+    assert.equal(cancelled.run('state'),stateAfter,'No cancelled nibble may resolve later: '+end);
+  }
+
   // Testing grants both controls even on a fresh save, without leaking progression.
   for(const earned of [[],['twitch'],['hold_pressure'],['twitch','hold_pressure']]){
     const skills=fixture();
