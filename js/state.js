@@ -108,6 +108,8 @@ let biteTimer = null;
 let resetTimer = null;
 let fightTimer = null;
 let disturbanceTimer = null;
+let nibbleTensionTimer = null;
+let preHookTension = 0;
 let catchIdCounter = 0;
 
 const CAST_DEPTH = 5;
@@ -154,3 +156,4 @@ let forcedSurgeMultiplier = 1;
 let quickRecoveryUsed = false;
 let lastGaspUsed = false;
 let fightAbilityUseCounts = {};
+

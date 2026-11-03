@@ -44,18 +44,75 @@ function fixture(storage=new Map(),device={}){
   const document=new Element('document');
   document.getElementById=id=>{assert.ok(elements[id],`Missing HTML ID: ${id}`);return elements[id];};
   document.createElement=tag=>new Element(tag);document.createTextNode=text=>Object.assign(new Element('#text'),{textContent:text});
-  const copies=[],intervals=[],windowEvents=new Element('window');
+  const copies=[],intervals=[],timeouts=[],windowEvents=new Element('window');
   let reloads=0;
   const c=vm.createContext({console,document,navigator:{clipboard:{writeText:async text=>copies.push(text)},...device},innerWidth:393,innerHeight:851,
     localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
-    setInterval:(callback,delay)=>{intervals.push({callback,delay});return intervals.length;},setTimeout:()=>1,clearInterval(){},clearTimeout(){},confirm:()=>false,
+    setInterval:(callback,delay)=>{intervals.push({callback,delay});return intervals.length;},setTimeout:(callback,delay)=>{timeouts.push({callback,delay,active:true});return timeouts.length;},clearInterval(){},clearTimeout(id){if(timeouts[id-1])timeouts[id-1].active=false;},confirm:()=>false,
     location:{reload(){reloads++;}},
     addEventListener:windowEvents.addEventListener.bind(windowEvents),
     getComputedStyle:()=>({font:'13px monospace',fontSize:'13px',fontFamily:'monospace',fontWeight:'normal'})});
   for(const match of html.matchAll(/<script src="([^"]+)"/g))vm.runInContext(fs.readFileSync(path.join(root,match[1]),'utf8'),c,{filename:match[1]});
-  return {c,e:elements,copies,storage,document,intervals,windowEvents,get reloads(){return reloads;},run:code=>vm.runInContext(code,c)};
+  return {c,e:elements,copies,storage,document,intervals,timeouts,windowEvents,get reloads(){return reloads;},run:code=>vm.runInContext(code,c)};
 }
 async function main(){
+  // Pre-hook meter feedback uses real encounter transitions and controlled timers.
+  const meter=fixture();
+  const level=()=>Number(meter.e.tensionInstrument.attributes['aria-valuenow']);
+  function fireTimeout(id){const timer=meter.timeouts[id-1];if(timer?.active){timer.active=false;timer.callback();}}
+  meter.run('finishIntro();setTestingMode(true);castLine();');
+  assert.equal(meter.run('state'),'casting');
+  assert.ok(meter.e.tensionInstrument.matches('.active'),'Meter appears before the first casting tick.');
+  assert.equal(level(),0);
+  const castTick=meter.intervals.find(timer=>timer.delay===120).callback;
+  for(let i=0;i<5;i++)castTick();
+  assert.equal(meter.run('state'),'waiting');
+  assert.equal(level(),0,'Waiting reveals no tension from the secretly selected fish.');
+  meter.run('currentFish=fishTypes.find(f=>f.id==="largemouth_bass");currentWeight=2;nibbleDepth=9;Math.random=()=>0.9;firstNibble();');
+  const smallPulse=level();
+  assert.ok(smallPulse>0 && smallPulse<10);
+  assert.equal(meter.run('tension'),0,'A nibble must not change fight tension.');
+  fireTimeout(meter.run('nibbleTensionTimer'));
+  assert.equal(level(),0);
+  assert.equal(meter.run('state'),'nibble','The pulse does not resolve the nibble.');
+  meter.run('currentWeight=20;firstNibble();');
+  assert.ok(level()>smallPulse,'Heavier fish give larger nibble blips.');
+  const pulseTimer=meter.run('nibbleTensionTimer');
+  meter.run('fishBites();');
+  const baseline=meter.run('getBaselineTension()');
+  assert.equal(level(),Math.round(baseline));
+  assert.equal(meter.timeouts[pulseTimer-1].active,false,'Bite cancels the pending blip reset.');
+  assert.equal(meter.timeouts[meter.run('biteTimer')-1].delay,meter.run('currentFish.hookWindow'));
+  fireTimeout(pulseTimer);
+  assert.equal(level(),Math.round(baseline));
+  meter.run('hookFish();');
+  assert.equal(meter.run('tension'),baseline);
+  assert.equal(level(),Math.round(baseline),'Hooking carries the same reading into the fight.');
+  meter.run('resetFishing();');
+  assert.ok(!meter.e.tensionInstrument.matches('.active'));
+  assert.equal(level(),0);
+
+  // Misses, early hooks, departures and resets clear feedback before another cast.
+  for(const end of ['missHook();','earlyHook();','fishLeaves();','fishSpooked();','resetFishing();']){
+    meter.run('resetFishing();currentFish=fishTypes.find(f=>f.id==="largemouth_bass");currentWeight=20;nibbleDepth=9;state="waiting";firstNibble();');
+    const pending=meter.run('nibbleTensionTimer');
+    if(end==='missHook();')meter.run('fishBites();');
+    meter.run(end);
+    fireTimeout(pending);
+    assert.equal(level(),0,end);
+    assert.equal(meter.run('preHookTension'),0,end);
+    meter.run('resetFishing();castLine();');
+    assert.equal(level(),0,'A new cast starts at zero.');
+    assert.ok(meter.e.tensionInstrument.matches('.active'));
+  }
+  meter.run('tensionViewOverride="original";drawTensionGrid();');
+  assert.ok(meter.e.tensionGrid.matches('.active'),'Original view also appears during casting.');
+  assert.equal(meter.e.tensionFillLayer.style.height,'0%');
+  meter.run('currentFish=fishTypes.find(f=>f.id==="largemouth_bass");currentWeight=4;state="nibble";fishBites();');
+  assert.equal(meter.e.tensionFillLayer.style.height,Math.round(meter.run('getBaselineTension()'))+'%');
+  meter.run('resetFishing();');
+  assert.ok(!meter.e.tensionGrid.matches('.active'));
+
   // Reproduce an autosave firing while reset's asynchronous reload is pending.
   const reset=fixture();
   reset.run('finishIntro();world.seasonDay=4;player.money=100;player.meta.obsession=5;saveGame();');
@@ -457,4 +514,5 @@ async function main(){
   console.log('UI/copying, save isolation, keyboard/device tracking, captured holds, thumb drift, pointer/keyboard handoffs, cancellation, blur/visibility, gesture suppression, and fight lifecycle checks passed.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
+
 
