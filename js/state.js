@@ -105,6 +105,8 @@ let nibbleDepth = 0;
 let lineTimer = null;
 let nibbleTimer = null;
 let biteTimer = null;
+let biteStartedAt = null;
+let hookDeadline = null;
 let resetTimer = null;
 let fightTimer = null;
 let disturbanceTimer = null;
@@ -118,6 +120,8 @@ const MAX_NIBBLE_TIME = 4500;
 const NIBBLE_PAUSE_MIN = 800;
 const NIBBLE_PAUSE_MAX = 1600;
 const TWITCH_BITE_WINDOW = 1200;
+const BITE_TWITCH_GRACE = 200;
+const BITE_TWITCH_PENALTY = 0.25;
 
 let nibbleCount = 0;
 let successfulTwitches = 0;
