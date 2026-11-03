@@ -56,6 +56,34 @@ function fixture(storage=new Map(),device={}){
   return {c,e:elements,copies,storage,document,intervals,timeouts,windowEvents,get reloads(){return reloads;},run:code=>vm.runInContext(code,c)};
 }
 async function main(){
+  // Testing grants both controls even on a fresh save, without leaking progression.
+  for(const earned of [[],['twitch'],['hold_pressure'],['twitch','hold_pressure']]){
+    const skills=fixture();
+    skills.run(`finishIntro();player.meta.learnedTechniques=${JSON.stringify(earned)};saveGame();`);
+    const originalSave=skills.storage.get('fishinSave');
+    const originalMeta=skills.storage.get('fishinMeta');
+    skills.run('setTestingMode(true);setTestingMode(true);');
+    const granted=JSON.parse(skills.run('JSON.stringify(player.meta.learnedTechniques)'));
+    assert.deepEqual([...granted].sort(),['hold_pressure','twitch']);
+    skills.run('currentFish=fishTypes.find(f=>f.id==="largemouth_bass");currentWeight=4;nibbleDepth=10;beginTestingEncounter();state="nibble";lastNibbleAt=Date.now();updateFishingControls();');
+    assert.equal(skills.e.twitchButton.hidden,false);
+    await skills.document.dispatch('keydown',{key:'j',target:skills.e.twitchButton});
+    assert.equal(skills.run('twitchPrimed'),true,'Granted Twitch is usable by keyboard.');
+    skills.run('state="bite";hookFish();');
+    assert.equal(skills.e.fightPressureButton.style.display,'inline-block');
+    await skills.document.dispatch('keydown',{key:'ArrowRight',target:skills.e.fightReelButton});
+    assert.equal(skills.run('isHoldingPressure'),true,'Granted Hold Pressure is usable by keyboard.');
+    skills.run('recordTestingResult("lost","Test complete.");saveGame();saveMetaProgress();');
+    assert.deepEqual(JSON.parse(skills.run('JSON.stringify(testingEncounter.skills)')).sort(),['hold_pressure','twitch']);
+    assert.equal(skills.storage.get('fishinSave'),originalSave);
+    assert.equal(skills.storage.get('fishinMeta'),originalMeta);
+    const reload=fixture(skills.storage);
+    assert.deepEqual(JSON.parse(reload.run('JSON.stringify(player.meta.learnedTechniques)')),earned,'Reload restores only earned skills.');
+    skills.run('setTestingMode(false);');
+    assert.deepEqual(JSON.parse(skills.run('JSON.stringify(player.meta.learnedTechniques)')),earned);
+    assert.deepEqual(JSON.parse(skills.storage.get('fishinMeta')).learnedTechniques,earned);
+  }
+
   // Pre-hook meter feedback uses real encounter transitions and controlled timers.
   const meter=fixture();
   const level=()=>Number(meter.e.tensionInstrument.attributes['aria-valuenow']);

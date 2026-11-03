@@ -62,6 +62,8 @@ function setTestingMode(enabled){
     player.gear.ownedRods=Object.keys(rods);player.gear.ownedReels=Object.keys(reels);player.gear.ownedTackle=Object.keys(tackleItems);
     Object.keys(player.gear.bait).forEach(id=>player.gear.bait[id]=999);
     player.inventory=[];
+    // These grants live only in the isolated test player; the snapshot restores earned skills.
+    ["twitch","hold_pressure"].forEach(learnTechnique);
     // Previous test results survive reloads without touching normal saves.
     gameLogEntries.length=0;
     try{const logs=JSON.parse(localStorage.getItem(TEST_RESULTS_KEY)||"[]");if(Array.isArray(logs))gameLogEntries.push(...logs);}catch(error){console.warn("Could not load test results",error);}
@@ -83,7 +85,7 @@ function setTestingMode(enabled){
   pierPanel.style.display="block";topNav.style.display="flex";
   for(const panel of [marketPanel,shopPanel,journalPanel,pubPanel,newspaperPanel])panel.style.display="none";
   refreshLocationUI();updateDisplays();updateInventoryDisplay();renderGearInventory();renderGameLog();updateTimeControls();startEnvironmentAnimations();
-  message.textContent=enabled?"Testing Mode: select a fish and weight class. Gear is available; unlocked techniques are preserved.":"Returned to your playthrough. Test results are kept separately.";
+  message.textContent=enabled?"Testing Mode: select a fish and weight class. Gear, Twitch, and Hold Pressure are available.":"Returned to your playthrough. Test results are kept separately.";
   if(!enabled)saveGame();
 }
 function beginTestingEncounter(){
