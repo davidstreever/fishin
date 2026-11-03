@@ -601,8 +601,8 @@ function clearPreHookTension(){
 }
 function pulseNibbleTension(){
   clearPreHookTension();
-  // Absolute weight gives a small 2–10% blip, below committed baseline tension.
-  preHookTension=2+8*currentWeight/(currentWeight+8);
+  // Preview one quarter of the same weight-and-strength baseline used on a bite.
+  preHookTension=getBaselineTension()*0.25;
   drawTensionGrid();
   nibbleTensionTimer=setTimeout(()=>{
     nibbleTensionTimer=null;
