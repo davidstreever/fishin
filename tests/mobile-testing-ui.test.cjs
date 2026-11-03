@@ -81,6 +81,12 @@ function timedBite(id='brook_trout'){
   return f;
 }
 async function main(){
+  const blip=timedNibble();
+  assert.equal(blip.run('preHookTension'),blip.run('getBaselineTension()*0.30'));
+  blip.advance(299);assert.ok(blip.run('preHookTension')>0);
+  blip.advance(300);assert.equal(blip.run('preHookTension'),0);
+  assert.equal(blip.run('state'),'nibble','The longer blip does not resolve the nibble.');
+
   // Grace is tied to bite onset, never refreshed by another press or added to the window.
   const grace=timedBite();
   const originalDeadline=grace.run('hookDeadline');
@@ -205,7 +211,7 @@ async function main(){
   assert.equal(level(),0,'Waiting reveals no tension from the secretly selected fish.');
   meter.run('currentFish=fishTypes.find(f=>f.id==="largemouth_bass");currentWeight=2;nibbleDepth=9;Math.random=()=>0.9;firstNibble();');
   const smallPulse=level();
-  assert.equal(meter.run("preHookTension"),meter.run("getBaselineTension()*0.25"));
+  assert.equal(meter.run("preHookTension"),meter.run("getBaselineTension()*0.30"));
   assert.ok(smallPulse>0 && smallPulse<10);
   assert.equal(meter.run('tension'),0,'A nibble must not change fight tension.');
   fireTimeout(meter.run('nibbleTensionTimer'));
@@ -216,10 +222,10 @@ async function main(){
   // Species strength contributes even at the same weight; fight tension stays untouched.
   meter.run('currentWeight=4;currentFish=fishTypes.find(f=>f.id==="pumpkinseed");firstNibble();');
   const gentlePulse=meter.run('preHookTension');
-  assert.equal(gentlePulse,meter.run('getBaselineTension()*0.25'));
+  assert.equal(gentlePulse,meter.run('getBaselineTension()*0.30'));
   meter.run('currentFish=fishTypes.find(f=>f.id==="landlocked_salmon");firstNibble();');
   assert.ok(meter.run('preHookTension')>gentlePulse);
-  assert.equal(meter.run('preHookTension'),meter.run('getBaselineTension()*0.25'));
+  assert.equal(meter.run('preHookTension'),meter.run('getBaselineTension()*0.30'));
   assert.equal(meter.run('tension'),0);
   const pulseTimer=meter.run('nibbleTensionTimer');
   meter.run('fishBites();');

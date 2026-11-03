@@ -626,14 +626,14 @@ function clearPreHookTension(){
 }
 function pulseNibbleTension(){
   clearPreHookTension();
-  // Preview one quarter of the same weight-and-strength baseline used on a bite.
-  preHookTension=getBaselineTension()*0.25;
+  // Preview 30% of the same weight-and-strength baseline used on a bite.
+  preHookTension=getBaselineTension()*0.30;
   drawTensionGrid();
   nibbleTensionTimer=setTimeout(()=>{
     nibbleTensionTimer=null;
     if(state!=="nibble")return;
     preHookTension=0;drawTensionGrid();
-  },220);
+  },300);
 }
 function drawTensionGrid(){
   if(!tensionGrid || !tensionFillLayer)return;
