@@ -75,7 +75,63 @@ function timedNibble(priorNibbles=0){
   };
   return f;
 }
+function timedBite(id='brook_trout'){
+  const f=timedNibble();
+  f.run(`currentFish=fishTypes.find(f=>f.id===${JSON.stringify(id)});fishBites();`);
+  return f;
+}
 async function main(){
+  // Grace is tied to bite onset, never refreshed by another press or added to the window.
+  const grace=timedBite();
+  const originalDeadline=grace.run('hookDeadline');
+  for(const at of [0,100,199]){
+    grace.advance(at);await grace.e.twitchButton.click();
+    assert.equal(grace.run('hookDeadline'),originalDeadline);
+    assert.equal(grace.run('disturbance'),0,'Forgiven bite inputs have no hidden nervousness penalty.');
+  }
+  grace.advance(200);
+  await grace.document.dispatch('keydown',{key:'j',target:grace.e.twitchButton});
+  assert.equal(grace.run('hookDeadline'),200+(1700-200)*0.75,'The grace boundary applies the proportional penalty.');
+  const afterPress=grace.run('hookDeadline');
+  await grace.document.dispatch('keydown',{key:'j',repeat:true,target:grace.e.twitchButton});
+  assert.equal(grace.run('hookDeadline'),afterPress,'Keyboard auto-repeat is not an additional press.');
+
+  // Real species examples: 25% of what remains, not 25% of the original window.
+  for(const [id,window,deadline] of [['pumpkinseed',2200,1775],['brook_trout',1700,1400],['landlocked_salmon',1500,1250]]){
+    const penalty=timedBite(id);
+    assert.equal(penalty.run('hookDeadline'),window);
+    penalty.advance(500);await penalty.e.twitchButton.click();
+    assert.equal(penalty.run('hookDeadline'),deadline);
+    penalty.advance(deadline-1);assert.equal(penalty.run('state'),'bite');
+    const bait=penalty.run('player.gear.bait[player.selectedBait]');
+    penalty.advance(deadline);assert.equal(penalty.run('state'),'finished');
+    assert.equal(penalty.run('player.gear.bait[player.selectedBait]'),bait-1);
+    penalty.advance(window);assert.equal(penalty.run('player.gear.bait[player.selectedBait]'),bait-1,'Old deadlines cannot expire the encounter twice.');
+  }
+  const repeated=timedBite();
+  repeated.advance(500);repeated.run('twitchLine();');assert.equal(repeated.run('hookDeadline'),1400);
+  repeated.advance(700);repeated.run('twitchLine();');assert.equal(repeated.run('hookDeadline'),1225);
+  repeated.advance(1000);repeated.run('twitchLine();');assert.equal(repeated.run('hookDeadline'),1168.75);
+  repeated.advance(1168);assert.equal(repeated.run('state'),'bite');
+  repeated.advance(1169);assert.equal(repeated.run('state'),'finished','Fractional deadlines expire on the next millisecond.');
+
+  const recovered=timedBite();
+  recovered.advance(500);recovered.run('twitchLine();hookFish();');
+  assert.equal(recovered.run('state'),'reeling','One mistaken Twitch still allows a hook.');
+  assert.equal(recovered.run('hookDeadline'),null);
+  recovered.advance(1700);assert.equal(recovered.run('state'),'reeling','Cancelled expiry cannot end a fight.');
+  const resetPenalty=timedBite();resetPenalty.advance(500);resetPenalty.run('twitchLine();resetFishing();');
+  assert.equal(resetPenalty.run('hookDeadline'),null);assert.equal(resetPenalty.run('biteStartedAt'),null);
+  resetPenalty.advance(2000);assert.equal(resetPenalty.run('state'),'ready');
+  resetPenalty.run('currentFish=fishTypes.find(f=>f.id==="brook_trout");state="nibble";fishBites();twitchLine();');
+  assert.equal(resetPenalty.run('hookDeadline'),3700,'A new encounter gets its own full window and grace.');
+
+  // A stalled timer cannot let either Hook or Twitch bypass an expired deadline.
+  for(const action of ['hookFish();','twitchLine();']){
+    const expired=timedBite();expired.c.clockTime=1701;expired.run(action);
+    assert.equal(expired.run('state'),'finished');
+  }
+
   // A Twitch late in the full response window changes this nibble's bite odds.
   const response=timedNibble();
   response.advance(250);
@@ -170,7 +226,8 @@ async function main(){
   const baseline=meter.run('getBaselineTension()');
   assert.equal(level(),Math.round(baseline));
   assert.equal(meter.timeouts[pulseTimer-1].active,false,'Bite cancels the pending blip reset.');
-  assert.equal(meter.timeouts[meter.run('biteTimer')-1].delay,meter.run('currentFish.hookWindow'));
+  assert.ok(meter.timeouts[meter.run('biteTimer')-1].delay>0);
+  assert.ok(meter.timeouts[meter.run('biteTimer')-1].delay<=meter.run('currentFish.hookWindow'));
   fireTimeout(pulseTimer);
   assert.equal(level(),Math.round(baseline));
   meter.run('hookFish();');

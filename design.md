@@ -82,6 +82,10 @@ This file records durable decisions for Fishin'. The current files in this folde
 - Use no conventional soundtrack. Future audio should rely on small environmental layers and fishing one-shots. As obsession grows, ordinary sounds may rarely behave incorrectly, without becoming a supernatural soundtrack.
 
 
+## Post-bite Twitch trial — November 3, 2026
+
+- Keep Twitch available until hooking. The first 200 ms after a committed bite forgive Twitch inputs without extending the hook window. After that, each Twitch removes 25% of the remaining time to hook. The grace period is anchored to bite onset and never restarts. Repeated penalties compound on the current remaining time; species hook windows and pre-bite Twitch behavior are otherwise unchanged. Playtest this separately from species-specific nibble timing.
+
 ## Freshwater nibble playtest — October 2, 2026
 
 - Species-specific nibble profiles target approximate no-Twitch departures per encounter: Pumpkinseed 1%, Yellow Perch 6.5%, Pickerel 15%, Smallmouth 10%, Largemouth 17.5%, White Perch 10%, Salmon 22.5%, Lake Trout 12.5%, Cusk 7.5%, Charr 4%. Brook Trout remains unchanged at about 42%. These are calculated targets, not raw nervousness values or observed success rates.
