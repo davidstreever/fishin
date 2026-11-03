@@ -230,19 +230,18 @@ function firstNibble(){
 }
 function resolveNibble(){
   if(!currentFish||fishHasLeft)return;
-  const probs=getNibbleProbabilities(nibbleCount,twitchPrimed);
-  // A primed Twitch applies to this check only for nervousness suppression; its
-  // interest gain already persists through successfulTwitches. A mistimed
-  // Twitch penalty is likewise consumed by this check.
-  twitchPrimed=false;pendingNervousnessMultiplier=1;
   clearTimeout(biteTimer);
   biteTimer=setTimeout(()=>{
-    if(state!=="nibble")return;
+    if(state!=="nibble"||!currentFish||fishHasLeft)return;
+    // Resolve after the response window so this nibble's Twitch affects this roll.
+    // Interest persists; nervousness suppression and mistiming penalties apply once.
+    const probs=getNibbleProbabilities(nibbleCount,twitchPrimed);
+    twitchPrimed=false;pendingNervousnessMultiplier=1;
     if(Math.random()<probs.biteChance){fishBites();return;}
     if(Math.random()<probs.effectiveLeaveChance){fishLeaves();return;}
     message.textContent="";
     scheduleNextNibble(randomNumber(NIBBLE_PAUSE_MIN,NIBBLE_PAUSE_MAX));
-  },250);
+  },TWITCH_BITE_WINDOW);
 }
 function twitchLine(){
   if(!["waiting","nibble","bite"].includes(state))return;
@@ -254,7 +253,7 @@ function twitchLine(){
   if(fishHasLeft||!currentFish)return;
   const recentNibble=Date.now()-lastNibbleAt<=TWITCH_BITE_WINDOW;
   // A single Twitch in the post-nibble timing window works the bait: it raises
-  // commitment and suppresses nervousness on the next nibble check.
+  // commitment and suppresses nervousness on the pending nibble check.
   if(state==="nibble"&&recentNibble&&!twitchPrimed){
     twitchPrimed=true;successfulTwitches++;
     message.textContent="";
